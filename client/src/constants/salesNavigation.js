@@ -1,18 +1,18 @@
 import {
-  LayoutDashboard,
+  House,
   Users,
   FileSearch,
-  FileText,
-  FolderKanban,
-  SlidersHorizontal,
-  LifeBuoy,
+  IndianRupee,
+  Layers,
+  Percent,
+  Settings,
 } from "lucide-react";
 
 export const salesNavigationItems = [
   {
-    label: "Dashboard",
+    label: "Overview",
     path: "/",
-    icon: LayoutDashboard,
+    icon: House,
     end: true,
   },
   {
@@ -28,21 +28,21 @@ export const salesNavigationItems = [
   {
     label: "Quotations",
     path: "/quotations",
-    icon: FileText,
+    icon: IndianRupee,
   },
   {
     label: "Projects",
     path: "/projects",
-    icon: FolderKanban,
+    icon: Layers,
   },
   {
     label: "Pricing & Subsidy",
     path: "/pricing",
-    icon: SlidersHorizontal,
+    icon: Percent,
   },
   {
-    label: "Help & Support",
-    path: "/support",
-    icon: LifeBuoy,
+    label: "Settings",
+    path: "/settings",
+    icon: Settings,
   },
 ];

@@ -1,15 +1,33 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
+
 import { useDashboardOverview } from "../hooks/useDashboardOverview.js";
 
+import DashboardHero from "../components/DashboardHero.jsx";
 import DashboardKpiCards from "../components/DashboardKpiCards.jsx";
-const MonthlyLeadTrend = lazy(() => import("../components/MonthlyLeadTrend.jsx"));
-const PriorityDistribution = lazy(() => import("../components/PriorityDistribution.jsx"));
 import RecentLeadsTable from "../components/RecentLeadsTable.jsx";
+import QuickActions from "../components/QuickActions.jsx";
+
+const MonthlyLeadTrend = lazy(
+  () => import("../components/MonthlyLeadTrend.jsx")
+);
+
+const PriorityDistribution = lazy(
+  () => import("../components/PriorityDistribution.jsx")
+);
+
+const actionMessages = {
+  "add-lead":
+    "The Add New Lead workflow will be connected when the Lead Management screen is implemented.",
+  "analyze-bill":
+    "The Bill Analysis workflow will be connected when its screen is implemented.",
+  "create-quotation":
+    "The Quotation Builder workflow will be connected when its screen is implemented.",
+};
 
 function DashboardLoading() {
   return (
-    <div className="space-y-6" aria-label="Loading dashboard">
-      <div className="h-16 animate-pulse rounded-2xl bg-gray-200" />
+    <div className="space-y-5" aria-label="Loading dashboard">
+      <div className="h-28 animate-pulse rounded-2xl bg-gray-200" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
@@ -20,9 +38,9 @@ function DashboardLoading() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="h-96 animate-pulse rounded-2xl bg-gray-200" />
-        <div className="h-96 animate-pulse rounded-2xl bg-gray-200" />
+      <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
+        <div className="h-80 animate-pulse rounded-2xl bg-gray-200" />
+        <div className="h-80 animate-pulse rounded-2xl bg-gray-200" />
       </div>
     </div>
   );
@@ -52,6 +70,14 @@ function DashboardError({ onRetry }) {
 
 function SalesDashboardPage() {
   const { data, isPending, isError, refetch } = useDashboardOverview();
+  const [actionNotice, setActionNotice] = useState("");
+
+  function handleQuickAction(actionId) {
+    setActionNotice(
+      actionMessages[actionId] ??
+        "This action is not available yet."
+    );
+  }
 
   if (isPending) {
     return <DashboardLoading />;
@@ -62,41 +88,49 @@ function SalesDashboardPage() {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="min-w-0 space-y-5">
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-brand-text">
-            Sales Overview
-          </h2>
-
-          <p className="mt-1 text-sm text-brand-muted">
-            Monitor leads, quotations and ongoing solar projects.
-          </p>
-        </div>
-
-        <span className="inline-flex w-fit items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">
-          Illustrative demo data
-        </span>
-      </div>
+      <DashboardHero />
 
       <DashboardKpiCards kpis={data.kpis} />
 
       <Suspense
         fallback={
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="h-96 animate-pulse rounded-2xl bg-gray-200" />
-            <div className="h-96 animate-pulse rounded-2xl bg-gray-200" />
+          <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
+            <div className="h-80 animate-pulse rounded-2xl bg-gray-200" />
+            <div className="h-80 animate-pulse rounded-2xl bg-gray-200" />
           </div>
         }
       >
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-2">
           <MonthlyLeadTrend data={data.monthlyLeadTrend} />
           <PriorityDistribution data={data.priorityDistribution} />
         </div>
       </Suspense>
 
-      <RecentLeadsTable leads={data.recentLeads} />
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,0.9fr)]">
+        <RecentLeadsTable leads={data.recentLeads} />
+
+        <QuickActions onAction={handleQuickAction} />
+      </div>
+
+      {actionNotice && (
+        <div
+          role="status"
+          className="flex items-start justify-between gap-4 rounded-xl border border-brand-border bg-white px-4 py-3 text-sm text-brand-muted shadow-sm"
+        >
+          <p>{actionNotice}</p>
+
+          <button
+            type="button"
+            onClick={() => setActionNotice("")}
+            aria-label="Dismiss action message"
+            className="shrink-0 font-semibold text-brand-emerald hover:text-brand-forest"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <p className="text-xs leading-5 text-brand-muted">
         Dashboard figures and chart values are illustrative demonstration

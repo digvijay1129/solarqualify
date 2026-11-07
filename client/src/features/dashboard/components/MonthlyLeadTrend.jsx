@@ -1,59 +1,142 @@
 import {
+  Area,
+  AreaChart,
   CartesianGrid,
-  Line,
-  LineChart,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
+import {
+  ChartNoAxesColumnIncreasing,
+  ChevronDown,
+} from "lucide-react";
+
+function LeadValueLabel({ x, y, value }) {
+  if (x == null || y == null || value == null) {
+    return null;
+  }
+
+  return (
+    <g>
+      <rect
+        x={x - 22}
+        y={y - 31}
+        width={44}
+        height={23}
+        rx={6}
+        fill="#E4F9EC"
+      />
+      <text
+        x={x}
+        y={y - 15}
+        textAnchor="middle"
+        fill="#142D20"
+        fontSize={12}
+        fontWeight={700}
+      >
+        {value}
+      </text>
+    </g>
+  );
+}
+
 function MonthlyLeadTrend({ data = [] }) {
   return (
-    <section className="rounded-2xl border border-brand-border bg-white p-5 shadow-card sm:p-6">
-      <div className="mb-6">
-        <h2 className="text-base font-semibold text-brand-text">
-          Monthly Lead Trend
-        </h2>
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-brand-border bg-white p-5 shadow-card sm:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <ChartNoAxesColumnIncreasing
+            size={23}
+            strokeWidth={2.8}
+            className="text-[#079447]"
+            aria-hidden="true"
+          />
 
-        <p className="mt-1 text-sm text-brand-muted">
-          Illustrative lead volume over the last six months
-        </p>
+          <h2 className="text-lg font-bold tracking-tight text-brand-text">
+            Monthly Leads Trend
+          </h2>
+        </div>
+
+        <span
+          aria-label="Displayed period: Last 6 Months"
+          className="inline-flex h-9 items-center gap-3 rounded-xl border border-brand-border bg-white px-3 text-sm font-medium text-brand-text shadow-sm"
+        >
+          Last 6 Months
+          <ChevronDown size={16} aria-hidden="true" />
+        </span>
       </div>
 
       {data.length > 0 ? (
-        <div className="h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
+        <div className="h-[270px] w-full min-w-0 overflow-hidden sm:h-[285px]">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <AreaChart
               data={data}
-              margin={{ top: 8, right: 12, left: -16, bottom: 4 }}
+              margin={{ top: 35, right: 12, left: -8, bottom: 2 }}
             >
+              <defs>
+                <linearGradient
+                  id="leadAreaGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor="#62D98F"
+                    stopOpacity={0.48}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor="#A8EDC0"
+                    stopOpacity={0.10}
+                  />
+                </linearGradient>
+              </defs>
+
               <CartesianGrid
-                stroke="var(--color-brand-border)"
+                stroke="#E7EDF0"
                 strokeDasharray="4 4"
                 vertical={false}
               />
 
               <XAxis
                 dataKey="month"
-                axisLine={false}
+                axisLine={{ stroke: "#CBD5E1" }}
                 tickLine={false}
-                tick={{ fill: "var(--color-brand-muted)", fontSize: 12 }}
+                tick={{
+                  fill: "#344054",
+                  fontSize: 12,
+                  fontWeight: 500,
+                }}
                 dy={10}
               />
 
               <YAxis
+                domain={[0, 300]}
+                ticks={[0, 50, 100, 150, 200, 250, 300]}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "var(--color-brand-muted)", fontSize: 12 }}
+                tick={{ fill: "#344054", fontSize: 12 }}
                 allowDecimals={false}
+                width={36}
               />
 
               <Tooltip
+                cursor={{ stroke: "#98A2B3", strokeWidth: 1 }}
                 contentStyle={{
                   borderRadius: "12px",
-                  border: "1px solid var(--color-brand-border)",
-                  boxShadow: "0 8px 24px rgba(16, 24, 40, 0.08)",
+                  border: "1px solid #E4E7EC",
+                  boxShadow: "0 8px 24px rgba(16, 24, 40, 0.10)",
+                  padding: "12px 14px",
+                }}
+                labelStyle={{
+                  color: "#101828",
+                  fontWeight: 600,
+                  marginBottom: 5,
                 }}
                 formatter={(value) => [
                   `${Number(value).toLocaleString("en-IN")} leads`,
@@ -61,25 +144,34 @@ function MonthlyLeadTrend({ data = [] }) {
                 ]}
               />
 
-              <Line
+              <Area
                 type="monotone"
                 dataKey="leads"
-                name="Leads"
-                stroke="var(--color-brand-emerald)"
+                name="Lead count"
+                stroke="#078B37"
                 strokeWidth={3}
+                fill="url(#leadAreaGradient)"
                 dot={{
-                  r: 4,
-                  fill: "var(--color-brand-emerald)",
-                  strokeWidth: 2,
-                  stroke: "#FFFFFF",
+                  r: 4.5,
+                  fill: "#FFFFFF",
+                  stroke: "#078B37",
+                  strokeWidth: 2.5,
                 }}
-                activeDot={{ r: 6, strokeWidth: 0 }}
-              />
-            </LineChart>
+                activeDot={{
+                  r: 6,
+                  fill: "#078B37",
+                  stroke: "#FFFFFF",
+                  strokeWidth: 2,
+                }}
+                isAnimationActive={false}
+              >
+                <LabelList content={LeadValueLabel} />
+              </Area>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="flex h-72 items-center justify-center text-sm text-brand-muted">
+        <div className="flex h-[285px] items-center justify-center text-sm text-brand-muted">
           No lead trend data available.
         </div>
       )}

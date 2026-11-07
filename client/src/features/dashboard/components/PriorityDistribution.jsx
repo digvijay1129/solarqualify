@@ -6,10 +6,12 @@ import {
   Tooltip,
 } from "recharts";
 
+import { ChartPie } from "lucide-react";
+
 const priorityColors = {
-  High: "var(--color-status-danger)",
-  Medium: "var(--color-status-warning)",
-  Low: "var(--color-status-info)",
+  High: "#079447",
+  Medium: "#FFB900",
+  Low: "#C9CED4",
 };
 
 function PriorityDistribution({ data = [] }) {
@@ -18,41 +20,84 @@ function PriorityDistribution({ data = [] }) {
     0
   );
 
+  const chartData = data.map((item) => ({
+    ...item,
+    percentage:
+      total > 0
+        ? ((Number(item.value) / total) * 100).toFixed(1)
+        : "0.0",
+  }));
+
+  // Separate visual order from legend order to match the reference.
+  const pieOrder = ["High", "Low", "Medium"];
+  const pieData = pieOrder
+    .map((name) => chartData.find((item) => item.name === name))
+    .filter(Boolean);
+
+  const legendOrder = ["High", "Medium", "Low"];
+  const legendData = legendOrder
+    .map((name) => chartData.find((item) => item.name === name))
+    .filter(Boolean);
+
   return (
-    <section className="rounded-2xl border border-brand-border bg-white p-5 shadow-card sm:p-6">
-      <div className="mb-4">
-        <h2 className="text-base font-semibold text-brand-text">
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-brand-border bg-white p-5 shadow-card sm:p-6">
+
+      <div className="mb-5 flex items-center gap-3">
+        <ChartPie
+          size={25}
+          strokeWidth={2.4}
+          className="shrink-0 text-[#079447]"
+          aria-hidden="true"
+        />
+
+        <h2 className="text-lg font-bold tracking-tight text-brand-text">
           Lead Priority Distribution
         </h2>
-
-        <p className="mt-1 text-sm text-brand-muted">
-          Illustrative breakdown by qualification priority
-        </p>
       </div>
 
-      {data.length > 0 && total > 0 ? (
-        <>
-          <div className="relative h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
+      {pieData.length > 0 && total > 0 ? (
+        <div className="flex min-h-[245px] w-full min-w-0 flex-col items-center gap-3 sm:flex-row sm:gap-2">
+
+          <div className="relative h-[230px] w-full min-w-0 overflow-hidden sm:w-[55%] sm:flex-none">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie
-                  data={data}
+                  data={pieData}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={68}
-                  outerRadius={94}
-                  paddingAngle={4}
-                  stroke="none"
+                  innerRadius={65}
+                  outerRadius={103}
+                  paddingAngle={1}
+                  stroke="#FFFFFF"
+                  strokeWidth={1.5}
+                  labelLine={false}
+                  isAnimationActive={false}
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, payload }) => {
+                    const radius =
+                      innerRadius + (outerRadius - innerRadius) * 0.57;
+                    const angle = -midAngle * (Math.PI / 180);
+
+                    return (
+                      <text
+                        x={cx + radius * Math.cos(angle)}
+                        y={cy + radius * Math.sin(angle)}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill={payload.name === "Low" ? "#344054" : "#FFFFFF"}
+                        fontSize={12}
+                        fontWeight={700}
+                      >
+                        {payload.percentage}%
+                      </text>
+                    );
+                  }}
                 >
-                  {data.map((item) => (
+                  {pieData.map((item) => (
                     <Cell
                       key={item.name}
-                      fill={
-                        priorityColors[item.name] ??
-                        "var(--color-brand-muted)"
-                      }
+                      fill={priorityColors[item.name] ?? "#98A2B3"}
                     />
                   ))}
                 </Pie>
@@ -60,11 +105,11 @@ function PriorityDistribution({ data = [] }) {
                 <Tooltip
                   formatter={(value, name) => [
                     `${Number(value).toLocaleString("en-IN")} leads`,
-                    name,
+                    `${name} Priority`,
                   ]}
                   contentStyle={{
                     borderRadius: "12px",
-                    border: "1px solid var(--color-brand-border)",
+                    border: "1px solid #E4E7EC",
                     boxShadow: "0 8px 24px rgba(16, 24, 40, 0.08)",
                   }}
                 />
@@ -72,54 +117,39 @@ function PriorityDistribution({ data = [] }) {
             </ResponsiveContainer>
 
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold text-brand-text">
+              <span className="text-[30px] font-bold tracking-tight text-brand-text">
                 {total.toLocaleString("en-IN")}
               </span>
-              <span className="mt-1 text-xs text-brand-muted">
+              <span className="text-xs font-medium text-brand-muted">
                 Total Leads
               </span>
             </div>
           </div>
 
-          <div className="mt-3 space-y-3">
-            {data.map((item) => {
-              const percentage = (Number(item.value) / total) * 100;
+          <div className="w-full space-y-5 sm:min-w-0 sm:flex-1 sm:space-y-5">
+            {legendData.map((item) => (
+              <div key={item.name} className="flex items-center gap-3">
+                <span
+                  className="h-4 w-4 shrink-0 rounded-[5px]"
+                  style={{ backgroundColor: priorityColors[item.name] }}
+                />
 
-              return (
-                <div
-                  key={item.name}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{
-                        backgroundColor:
-                          priorityColors[item.name] ??
-                          "var(--color-brand-muted)",
-                      }}
-                    />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-brand-text">
+                    {item.name} Priority
+                  </p>
 
-                    <span className="text-sm text-brand-muted">
-                      {item.name} Priority
-                    </span>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-sm font-semibold text-brand-text">
-                      {Number(item.value).toLocaleString("en-IN")}
-                    </span>
-                    <span className="ml-2 text-xs text-brand-muted">
-                      {percentage.toFixed(1)}%
-                    </span>
-                  </div>
+                  <p className="mt-0.5 text-sm text-brand-muted">
+                    {Number(item.value).toLocaleString("en-IN")} ({item.percentage}%)
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
-        </>
+
+        </div>
       ) : (
-        <div className="flex h-72 items-center justify-center text-sm text-brand-muted">
+        <div className="flex h-[245px] items-center justify-center text-sm text-brand-muted">
           No priority distribution data available.
         </div>
       )}
