@@ -1,15 +1,22 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
-import App from "./App.jsx";
+import SalesLayout from "./layouts/SalesLayout.jsx";
+import SalesDashboardPage from "../features/dashboard/pages/SalesDashboardPage.jsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />,
-  },
-  {
-    path: "*",
-    element: <Navigate to="/" replace />,
+    element: <SalesLayout />,
+    children: [
+      {
+        index: true,
+        element: <SalesDashboardPage />,
+      },
+      {
+        path: "*",
+        element: <Navigate to="/" replace />,
+      },
+    ],
   },
 ]);
 
