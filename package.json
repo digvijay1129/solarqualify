@@ -1,0 +1,23 @@
+{
+  "name": "solarqualify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered rooftop solar lead qualification, quotation and project tracking platform",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev:client": "npm run dev --workspace=@solarqualify/client",
+    "build:client": "npm run build --workspace=@solarqualify/client",
+    "preview:client": "npm run preview --workspace=@solarqualify/client",
+    "dev:server": "npm run dev --workspace=@solarqualify/server",
+    "start:server": "npm run start --workspace=@solarqualify/server",
+    "test:client": "npm run test --workspace=@solarqualify/client",
+    "test:server": "npm run test --workspace=@solarqualify/server"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

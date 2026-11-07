@@ -1,0 +1,17 @@
+{
+  "name": "@solarqualify/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "SolarQualify Node.js backend application",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

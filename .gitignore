@@ -1,0 +1,42 @@
+﻿# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.next/
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploaded files and temporary documents
+uploads/
+temp/
+tmp/
+
+# Operating system
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE settings
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Test and temporary files
+.nyc_output/
+*.tmp
+
+# Local database files
+*.sqlite
+*.db

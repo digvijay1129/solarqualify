@@ -1,0 +1,106 @@
+# SolarQualify
+
+AI-Powered Rooftop Solar Lead Qualification, Quotation and Project Tracking System.
+
+## Overview
+
+SolarQualify is a web-based platform designed to help rooftop solar installation businesses manage customer enquiries, analyze electricity bills, qualify potential leads, generate solar quotations and track installation projects.
+
+## User Roles
+
+### Homeowner
+- Register and sign in.
+- Submit property and electricity consumption details.
+- Upload electricity bills.
+- Review bill information.
+- View solar quotations.
+- Track project progress.
+
+### Sales Staff
+- View and manage customer leads.
+- Review and correct OCR-extracted bill information.
+- View explainable lead scores.
+- Generate solar quotations.
+- Manage pricing and subsidy rules.
+- Track installation projects.
+
+## Technology Stack
+
+### Frontend
+- React.js
+- JavaScript (ES Modules)
+- Vite
+- Tailwind CSS
+- React Router
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT Authentication
+
+### AI and Processing
+- Tesseract.js for OCR
+- JavaScript-based lead scoring
+- Fixed solar calculation formulas
+
+### Deployment
+- Vercel
+- Render
+- MongoDB Atlas
+- Private object storage
+
+## Architecture
+
+The application follows a modular monolithic architecture.
+
+- `client/` contains the React frontend.
+- `server/` contains the Node.js backend.
+- `docs/` contains project architecture and design documentation.
+
+## Core Workflow
+
+1. Homeowner submits a solar enquiry.
+2. Homeowner uploads an electricity bill.
+3. OCR extracts relevant information.
+4. Sales staff verifies extracted values.
+5. The system calculates lead priority and recommended solar capacity.
+6. Sales staff generates a quotation.
+7. Customer and staff track project progress.
+
+## Project Development Approach
+
+Development is organized into phases:
+
+1. Project architecture and folder structure.
+2. UI/UX design and image generation.
+3. Frontend development using static sample data.
+4. Backend development.
+5. Frontend and backend integration.
+6. OCR, lead scoring and solar calculations.
+7. Testing and security.
+8. Deployment and documentation.
+
+## Important Notes
+
+- The application is developed using JavaScript only.
+- No TypeScript is used.
+- Static data is used during initial frontend development.
+- Static repositories will be replaced with backend API repositories during integration.
+- OCR results require human verification.
+- Solar calculations use fixed formulas, not AI-generated calculations.
+- Subsidy and pricing rules are configurable and versioned.
+- Sample data is synthetic and must not contain real customer information.
+
+## Project Status
+
+Phase 1: Architecture and project structure setup.
+
+## Assumptions and Limitations
+
+All implementation assumptions, calculation rules and known limitations will be documented in `docs/assumptions.md`.
+
+## License
+
+This project is developed as an individual software engineering internship take-home assignment.
