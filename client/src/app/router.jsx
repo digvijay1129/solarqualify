@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import SalesLayout from "./layouts/SalesLayout.jsx";
 import SalesDashboardPage from "../features/dashboard/pages/SalesDashboardPage.jsx";
 import LeadManagementPage from "../features/leads/pages/LeadManagementPage.jsx";
+import BillAnalysisPage from "../features/bill-analysis/pages/BillAnalysisPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,10 @@ const router = createBrowserRouter([
       {
         path: "leads",
         element: <LeadManagementPage />,
+      },
+      {
+        path: "bill-analysis",
+        element: <BillAnalysisPage />,
       },
       {
         path: "*",

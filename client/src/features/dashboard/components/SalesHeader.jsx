@@ -19,7 +19,9 @@ function SalesHeader() {
       ? "Overview"
       : location.pathname === "/leads"
         ? "Leads"
-        : "Sales Workspace";
+        : location.pathname === "/bill-analysis"
+          ? "Bill Analysis"
+          : "Sales Workspace";
 
   function NotificationButton() {
     return (
