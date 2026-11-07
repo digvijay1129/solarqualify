@@ -14,9 +14,12 @@ function SalesHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  const pageTitle = location.pathname === "/"
-    ? "Overview"
-    : "Sales Workspace";
+  const pageTitle =
+    location.pathname === "/"
+      ? "Overview"
+      : location.pathname === "/leads"
+        ? "Leads"
+        : "Sales Workspace";
 
   function NotificationButton() {
     return (
