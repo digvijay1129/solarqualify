@@ -1,0 +1,22 @@
+// Add imports to client/src/app/router.jsx:
+import HomeownerPortalLayout from "../features/homeowner/layouts/HomeownerPortalLayout.jsx";
+import HomeownerDashboardPage from "../features/homeowner/pages/HomeownerDashboardPage.jsx";
+import HomeownerLeadSubmissionPage from "../features/homeowner/pages/HomeownerLeadSubmissionPage.jsx";
+import HomeownerProjectStatusPage from "../features/homeowner/pages/HomeownerProjectStatusPage.jsx";
+import HomeownerQuotationsPage from "../features/homeowner/pages/HomeownerQuotationsPage.jsx";
+import HomeownerDocumentsPage from "../features/homeowner/pages/HomeownerDocumentsPage.jsx";
+import HomeownerProfileSupportPage from "../features/homeowner/pages/HomeownerProfileSupportPage.jsx";
+
+// Add as a top-level sibling of your existing SalesLayout route:
+{
+  path: "/homeowner",
+  element: <HomeownerPortalLayout />,
+  children: [
+    { index: true, element: <HomeownerDashboardPage /> },
+    { path: "lead", element: <HomeownerLeadSubmissionPage /> },
+    { path: "project", element: <HomeownerProjectStatusPage /> },
+    { path: "quotations", element: <HomeownerQuotationsPage /> },
+    { path: "documents", element: <HomeownerDocumentsPage /> },
+    { path: "profile-support", element: <HomeownerProfileSupportPage /> },
+  ],
+},
