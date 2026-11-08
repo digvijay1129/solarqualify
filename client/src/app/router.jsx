@@ -6,6 +6,7 @@ import LeadManagementPage from "../features/leads/pages/LeadManagementPage.jsx";
 import BillAnalysisPage from "../features/bill-analysis/pages/BillAnalysisPage.jsx";
 import QuotationBuilderPage from "../features/quotations/pages/QuotationBuilderPage.jsx";
 import ProjectTrackerPage from "../features/projects/pages/ProjectTrackerPage.jsx";
+import PricingSubsidyPage from "../features/pricing/pages/PricingSubsidyPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
       {
         path: "projects",
         element: <ProjectTrackerPage />,
+      },
+      {
+        path: "pricing",
+        element: <PricingSubsidyPage />,
       },
       {
         path: "*",
