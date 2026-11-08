@@ -17,5 +17,8 @@
   "devDependencies": {
     "nodemon": "3.1.11",
     "supertest": "^7.3.2"
+  },
+  "dependencies": {
+    "mongoose": "^9.12.0"
   }
 }
