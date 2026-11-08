@@ -1,5 +1,9 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
+import LoginPage from "../features/authentication/pages/LoginPage.jsx";
+import HomeownerRegistrationPage from "../features/authentication/pages/HomeownerRegistrationPage.jsx";
+import ForgotPasswordPage from "../features/authentication/pages/ForgotPasswordPage.jsx";
+
 import SalesLayout from "./layouts/SalesLayout.jsx";
 import SalesDashboardPage from "../features/dashboard/pages/SalesDashboardPage.jsx";
 import LeadManagementPage from "../features/leads/pages/LeadManagementPage.jsx";
@@ -9,6 +13,21 @@ import ProjectTrackerPage from "../features/projects/pages/ProjectTrackerPage.js
 import PricingSubsidyPage from "../features/pricing/pages/PricingSubsidyPage.jsx";
 
 const router = createBrowserRouter([
+  // Public authentication routes
+  {
+    path: "/login",
+    element: <LoginPage />,
+  },
+  {
+    path: "/register",
+    element: <HomeownerRegistrationPage />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPasswordPage />,
+  },
+
+  // Existing Sales Staff workspace
   {
     path: "/",
     element: <SalesLayout />,
