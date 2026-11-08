@@ -5,6 +5,7 @@ import SalesDashboardPage from "../features/dashboard/pages/SalesDashboardPage.j
 import LeadManagementPage from "../features/leads/pages/LeadManagementPage.jsx";
 import BillAnalysisPage from "../features/bill-analysis/pages/BillAnalysisPage.jsx";
 import QuotationBuilderPage from "../features/quotations/pages/QuotationBuilderPage.jsx";
+import ProjectTrackerPage from "../features/projects/pages/ProjectTrackerPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
       {
         path: "quotations",
         element: <QuotationBuilderPage />,
+      },
+      {
+        path: "projects",
+        element: <ProjectTrackerPage />,
       },
       {
         path: "*",
