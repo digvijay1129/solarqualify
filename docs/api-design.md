@@ -28,19 +28,146 @@ Sales staff accounts will be provisioned through a controlled process.
 
 ## 3. Lead Management APIs
 
+All Leads endpoints require JWT authentication.
+
+### 3.1 Endpoints
+
 | Method | Endpoint | Description | Access |
-| POST | /leads | Create customer lead | Homeowner / Sales Staff |
-| GET | /leads | List permitted leads | Authenticated |
-| GET | /leads/:leadId | Get lead details | Authorized User |
+|---|---|---|---|
+| POST | /leads | Create a customer lead | Homeowner / Sales Staff |
+| GET | /leads | List permitted leads | Homeowner / Sales Staff |
+| GET | /leads/overview | Retrieve lead overview and KPI counts | Homeowner / Sales Staff |
+| GET | /leads/:leadId | Retrieve lead details | Authorized User |
 | PATCH | /leads/:leadId | Update permitted lead fields | Authorized User |
-| PATCH | /leads/:leadId/assignment | Assign lead to staff | Sales Staff |
+| PATCH | /leads/:leadId/assignment | Assign lead to Sales Staff | Sales Staff |
 
-Homeowners can access only their own lead records.
+### 3.2 Lead Creation
 
-Sales staff can access leads within their authorized business scope.
+Required fields:
 
-Lead list endpoints will support pagination, search and filtering.
+- customerName
+- email
+- phone
+- propertyAddress
+- consent
 
+Optional fields:
+
+- propertyType
+- ownership
+- monthlyElectricityBill
+- monthlyUnits
+
+The consent field must explicitly be `true`.
+
+Homeowner-created leads are associated with the authenticated homeowner.
+
+Sales Staff-created leads are initially assigned to the authenticated Sales Staff member.
+
+The backend controls homeowner ID, staff assignment, priority, status,
+lead score and recommended system capacity. These values must not be
+accepted as trusted client input during lead creation.
+
+### 3.3 Lead Listing and Filtering
+
+Supported query parameters:
+
+| Parameter | Description | Supported values |
+|---|---|---|
+| status | Filter by status | all, new, qualified, in-progress, contacted, quotation_created, converted, lost |
+| priority | Filter by priority | all, low, medium, high |
+| location | Filter by property location | all, not-provided, or location text |
+| search | Search lead information | Name, reference ID, phone, email or address |
+| page | Page number | Positive integer |
+| pageSize | Records per page | 5, 10 or 20 |
+
+The `in-progress` filter includes both `contacted` and
+`quotation_created` database statuses.
+
+Homeowners can retrieve only their own records.
+
+Sales Staff can retrieve only records currently assigned to them.
+
+### 3.4 Lead List Response
+
+The successful response contains:
+
+- `items`: array of lead records.
+- `pagination`: page, pageSize, totalItems and totalPages.
+
+Lead records expose:
+
+- id
+- referenceId
+- name
+- email
+- phone
+- location
+- propertyType
+- ownership
+- monthlyBill
+- monthlyUnits
+- recommendedSystemKw
+- priority and priorityCode
+- status and statusCode
+- createdAt and updatedAt
+
+The API translates database status and priority codes into frontend
+display labels. Database status values remain unchanged.
+
+### 3.5 Lead Overview
+
+GET `/leads/overview` returns live MongoDB counts for:
+
+- Total leads
+- New leads
+- Qualified leads
+- In-progress leads
+- Converted leads
+- Lost leads
+
+Overview counts are scoped to the authenticated user's permitted records.
+
+Growth percentages remain `null` until sufficient historical comparison
+data is available. Demonstration percentages must not be presented as
+verified company performance.
+
+### 3.6 Lead Updates
+
+PATCH `/leads/:leadId` accepts only permitted fields.
+
+Homeowners may update their own customer and property information.
+
+Sales Staff may update permitted customer and property information,
+lead status and priority for records assigned to them.
+
+Ownership IDs, staff assignment IDs, lead scores and recommended system
+capacity cannot be changed through the general update endpoint.
+
+### 3.7 Lead Assignment
+
+PATCH `/leads/:leadId/assignment` requires Sales Staff authorization.
+
+Request body:
+
+- `salesStaffId`: ID of an active user whose role is `salesStaff`.
+
+A Sales Staff member can reassign a lead only when the lead is within
+their current authorized assignment scope.
+
+The server validates the target account using MongoDB. Inactive users
+and users with other roles cannot receive lead assignments.
+
+### 3.8 Lead Security and Data Integrity
+
+- Every lead must belong to a homeowner or have a Sales Staff assignment.
+- Homeowner access is restricted by `homeownerId`.
+- Sales Staff access is restricted by `assignedSalesStaffId`.
+- Resource ownership and assignment are checked in database queries.
+- Client-supplied ownership and assignment fields are not trusted.
+- Search input is escaped before being used in MongoDB regular expressions.
+- Invalid status, priority, pagination and field values are rejected.
+- Unavailable customer information is not inferred.
 ## 4. Electricity Bill Analysis APIs
 
 | Method | Endpoint | Description | Access |
@@ -218,3 +345,17 @@ After backend development:
 This document describes the planned backend API contracts.
 
 The Express routes, controllers, validation and database operations will be implemented during the backend development phase.
+
+### Lead access, ownership, and assignment rules
+
+- Homeowners can access only leads linked to their authenticated homeowner account.
+- Homeowner-created leads remain unassigned until a Sales Staff member claims them.
+- Sales Staff can list and view leads assigned to themselves and unassigned homeowner leads.
+- Sales Staff can update a lead's details, status, and priority only when it is assigned to them.
+- Sales Staff can claim an unassigned lead by assigning it to their own authenticated user ID.
+- Sales Staff can transfer a lead assigned to themselves to another active Sales Staff member.
+- Sales Staff cannot claim an unassigned lead for another staff member or modify a lead assigned to someone else.
+- Assignment updates use a conditional database update to prevent concurrent claims. If another staff member claims the lead first, the request returns a conflict response.
+- A lead created directly by Sales Staff is assigned to its creator.
+- The API derives ownership and assignment from the authenticated user. Client-supplied ownership, assignment, lead score, priority, and status values cannot override server-controlled creation fields.
+- Lead list search and filters must always preserve the authenticated user's access scope.

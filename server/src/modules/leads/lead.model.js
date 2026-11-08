@@ -1,11 +1,20 @@
+import { randomBytes } from 'node:crypto';
 import mongoose from 'mongoose';
 
 const leadSchema = new mongoose.Schema(
   {
+    referenceId: {
+      type: String,
+      required: true,
+      immutable: true,
+      default: () => `L-${randomBytes(4).toString('hex').toUpperCase()}`,
+      maxlength: 20,
+    },
+
     homeownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      default: null,
       index: true,
     },
 
@@ -20,6 +29,7 @@ const leadSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      minlength: 2,
       maxlength: 100,
     },
 
@@ -29,6 +39,7 @@ const leadSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       maxlength: 254,
+      match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Enter a valid email address.'],
     },
 
     phone: {
@@ -51,9 +62,27 @@ const leadSchema = new mongoose.Schema(
       default: 'residential',
     },
 
+    ownership: {
+      type: String,
+      enum: ['owner', 'tenant', 'other', 'unknown'],
+      default: 'unknown',
+    },
+
     monthlyElectricityBill: {
       type: Number,
       min: 0,
+      default: null,
+    },
+
+    monthlyUnits: {
+      type: Number,
+      min: 0,
+      default: null,
+    },
+
+    recommendedSystemKw: {
+      type: Number,
+      min: 0.1,
       default: null,
     },
 
@@ -107,8 +136,19 @@ const leadSchema = new mongoose.Schema(
   }
 );
 
+leadSchema.pre('validate', function () {
+  if (!this.homeownerId && !this.assignedSalesStaffId) {
+    this.invalidate(
+      'assignedSalesStaffId',
+      'A lead must belong to a homeowner or be assigned to sales staff.'
+    );
+  }
+});
+
+leadSchema.index({ referenceId: 1 }, { unique: true });
 leadSchema.index({ status: 1, createdAt: -1 });
 leadSchema.index({ assignedSalesStaffId: 1, status: 1 });
+leadSchema.index({ homeownerId: 1, createdAt: -1 });
 
 const Lead = mongoose.model('Lead', leadSchema);
 

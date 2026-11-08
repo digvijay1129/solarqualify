@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import { describe, expect, it } from 'vitest';
 import Lead from '../src/modules/leads/lead.model.js';
 
@@ -30,13 +30,25 @@ describe('Lead Model', () => {
     expect(lead.email).toBe('homeowner@example.com');
   });
 
-  it('should reject a lead without a homeowner ID', async () => {
+  it('should accept a sales-staff-created lead with an assignment', async () => {
+    const data = validLead();
+    delete data.homeownerId;
+    data.assignedSalesStaffId = new mongoose.Types.ObjectId();
+
+    const lead = new Lead(data);
+
+    await expect(lead.validate()).resolves.toBeUndefined();
+  });
+
+  it('should reject a lead without a homeowner or sales staff assignment', async () => {
     const data = validLead();
     delete data.homeownerId;
 
     const lead = new Lead(data);
 
-    await expect(lead.validate()).rejects.toHaveProperty('errors.homeownerId');
+    await expect(lead.validate()).rejects.toHaveProperty(
+      'errors.assignedSalesStaffId'
+    );
   });
 
   it('should reject an unsupported property type', async () => {
