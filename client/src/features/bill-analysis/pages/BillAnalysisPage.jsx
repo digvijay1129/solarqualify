@@ -1,12 +1,11 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 import { useBillAnalysis } from "../hooks/useBillAnalysis.js";
+import { useBillAnalysisSession } from "../../../app/providers/BillAnalysisSessionProvider.jsx";
 
 import BillAnalysisHero from "../components/BillAnalysisHero.jsx";
-
 import BillAnalysisStepper from "../components/BillAnalysisStepper.jsx";
 import BillUploadPanel from "../components/upload/BillUploadPanel.jsx";
-
 import ExtractedInformationPanel from "../components/extraction/ExtractedInformationPanel.jsx";
 
 function BillAnalysisLoading() {
@@ -27,9 +26,11 @@ function BillAnalysisError({ onRetry }) {
       <h2 className="text-lg font-semibold text-brand-text">
         Bill Analysis could not be loaded
       </h2>
+
       <p className="mt-2 text-sm text-brand-muted">
         Something went wrong while retrieving Bill Analysis information.
       </p>
+
       <button
         type="button"
         onClick={onRetry}
@@ -43,23 +44,29 @@ function BillAnalysisError({ onRetry }) {
 
 function BillAnalysisContent({ data }) {
   const fileInputRef = useRef(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fieldValues, setFieldValues] = useState(() =>
-    Object.fromEntries(
-      data.extraction.fields.map((field) => [
-        field.id,
-        field.value ?? "",
-      ])
-    )
+
+  const { session, setSession } = useBillAnalysisSession();
+
+  const initialFieldValues = Object.fromEntries(
+    data.extraction.fields.map((field) => [
+      field.id,
+      field.value ?? "",
+    ])
   );
-  const [validationErrors, setValidationErrors] = useState({});
-  const [reviewMessage, setReviewMessage] = useState("");
-  const [confirmedValues, setConfirmedValues] = useState(null);
+
+  // Values remain in the shared provider when the route changes.
+  const selectedFile = session.selectedFile ?? null;
+  const fieldValues = session.fieldValues ?? initialFieldValues;
+  const validationErrors = session.validationErrors ?? {};
+  const reviewMessage = session.reviewMessage ?? "";
+  const confirmedValues = session.confirmedValues ?? null;
 
   const isConfirmed = Boolean(
-    confirmedValues &&
+    selectedFile &&
+      confirmedValues &&
       Object.entries(confirmedValues).every(
-        ([fieldId, value]) => String(fieldValues[fieldId] ?? "") === value
+        ([fieldId, value]) =>
+          String(fieldValues[fieldId] ?? "") === value
       )
   );
 
@@ -69,31 +76,44 @@ function BillAnalysisContent({ data }) {
   }));
 
   function handleFieldChange(fieldId, value) {
-    setFieldValues((previous) => ({
-      ...previous,
-      [fieldId]: value,
-    }));
+    setSession((previous) => {
+      const nextErrors = {
+        ...(previous.validationErrors ?? {}),
+      };
 
-    setValidationErrors((previous) => {
-      const next = { ...previous };
-      delete next[fieldId];
-      return next;
+      delete nextErrors[fieldId];
+
+      return {
+        ...previous,
+        fieldValues: {
+          ...(previous.fieldValues ?? fieldValues),
+          [fieldId]: value,
+        },
+        validationErrors: nextErrors,
+        confirmedValues: null,
+        reviewMessage: "",
+      };
     });
-
-    setConfirmedValues(null);
-    setReviewMessage("");
   }
 
   function handleSaveDraft() {
-    setConfirmedValues(null);
-    setReviewMessage(
-      "Draft retained in this page session only. It has not been saved to a server."
-    );
+    setSession((previous) => ({
+      ...previous,
+      confirmedValues: null,
+      reviewMessage:
+        "Draft retained in this app session only. It has not been saved to a server.",
+    }));
   }
 
   function handleConfirmDetails() {
     if (!selectedFile) {
-      setReviewMessage("Please upload an electricity bill before confirming details.");
+      setSession((previous) => ({
+        ...previous,
+        confirmedValues: null,
+        reviewMessage:
+          "Please upload an electricity bill before confirming details.",
+      }));
+
       return;
     }
 
@@ -135,32 +155,60 @@ function BillAnalysisContent({ data }) {
       const invalid =
         !rawValue ||
         !Number.isFinite(numericValue) ||
-        (exclusive ? numericValue <= minimum : numericValue < minimum);
+        (exclusive
+          ? numericValue <= minimum
+          : numericValue < minimum);
 
       if (invalid) {
         errors[id] = label;
       }
     });
 
-    setValidationErrors(errors);
-
     if (Object.keys(errors).length > 0) {
-      setConfirmedValues(null);
-      setReviewMessage("Please correct the highlighted fields before confirming.");
+      setSession((previous) => ({
+        ...previous,
+        validationErrors: errors,
+        confirmedValues: null,
+        reviewMessage:
+          "Please correct the highlighted fields before confirming.",
+      }));
+
       return;
     }
 
-    setConfirmedValues(
-      Object.fromEntries(
-        Object.entries(fieldValues).map(([fieldId, value]) => [
-          fieldId,
-          String(value ?? ""),
-        ])
-      )
+    const snapshot = Object.fromEntries(
+      Object.entries(fieldValues).map(([fieldId, value]) => [
+        fieldId,
+        String(value ?? ""),
+      ])
     );
-    setReviewMessage(
-      "Details confirmed for this page session. No OCR extraction or server save was performed."
-    );
+
+    setSession((previous) => ({
+      ...previous,
+      validationErrors: {},
+      confirmedValues: snapshot,
+      reviewMessage:
+        "Details confirmed for this app session. No OCR extraction or server save was performed.",
+    }));
+  }
+
+  function handleFileSelect(file) {
+    setSession((previous) => ({
+      ...previous,
+      selectedFile: file,
+      validationErrors: {},
+      confirmedValues: null,
+      reviewMessage: "",
+    }));
+  }
+
+  function handleRemoveFile() {
+    setSession((previous) => ({
+      ...previous,
+      selectedFile: null,
+      confirmedValues: null,
+      reviewMessage: "",
+    }));
   }
 
   return (
@@ -173,24 +221,14 @@ function BillAnalysisContent({ data }) {
       />
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[0.92fr_1.08fr]">
-        <div className="min-w-0 space-y-5">
+        <div className="min-w-0">
           <BillUploadPanel
             selectedFile={selectedFile}
-            onFileSelect={(file) => {
-              setSelectedFile(file);
-              setConfirmedValues(null);
-              setReviewMessage("");
-            }}
-            onRemoveFile={() => {
-              setSelectedFile(null);
-              setConfirmedValues(null);
-              setReviewMessage("");
-            }}
+            onFileSelect={handleFileSelect}
+            onRemoveFile={handleRemoveFile}
             maxFileSizeMB={data.upload.maxFileSizeMB}
             fileInputRef={fileInputRef}
           />
-
-
         </div>
 
         <div className="min-w-0">
@@ -220,8 +258,8 @@ function BillAnalysisContent({ data }) {
       )}
 
       <p className="text-xs leading-5 text-brand-muted">
-        {data.dataLabel}. Manual entries and confirmation are temporary
-        browser-session state. Backend persistence and OCR are not connected.
+        {data.dataLabel}. Manual entries and confirmation are retained
+        in the current app session. Backend persistence and OCR are not connected.
       </p>
     </div>
   );
@@ -234,7 +272,7 @@ function BillAnalysisPage() {
     return <BillAnalysisLoading />;
   }
 
-  if (isError) {
+  if (isError || !data) {
     return <BillAnalysisError onRetry={refetch} />;
   }
 

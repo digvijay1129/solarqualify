@@ -1,4 +1,5 @@
 import { Outlet } from "react-router-dom";
+import { BillAnalysisSessionProvider } from "../providers/BillAnalysisSessionProvider.jsx";
 
 import SalesSidebar from "../../features/dashboard/components/SalesSidebar.jsx";
 import SalesHeader from "../../features/dashboard/components/SalesHeader.jsx";
@@ -6,7 +7,8 @@ import MobileSalesNavigation from "../../features/dashboard/components/MobileSal
 
 function SalesLayout() {
   return (
-    <div className="min-h-screen bg-brand-background lg:flex">
+    <BillAnalysisSessionProvider>
+      <div className="min-h-screen bg-brand-background lg:flex">
 
       <SalesSidebar />
 
@@ -20,7 +22,8 @@ function SalesLayout() {
         </main>
       </div>
 
-    </div>
+      </div>
+    </BillAnalysisSessionProvider>
   );
 }
 

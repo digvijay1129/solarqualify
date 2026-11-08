@@ -21,7 +21,9 @@ function SalesHeader() {
         ? "Leads"
         : location.pathname === "/bill-analysis"
           ? "Bill Analysis"
-          : "Sales Workspace";
+          : location.pathname === "/quotations"
+            ? "Quotation Builder"
+            : "Sales Workspace";
 
   function NotificationButton() {
     return (
