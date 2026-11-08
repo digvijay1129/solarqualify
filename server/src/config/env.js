@@ -14,6 +14,7 @@ if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65535) {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+
 const allowedEnvironments = new Set([
   'development',
   'test',
@@ -24,6 +25,14 @@ if (!allowedEnvironments.has(nodeEnv)) {
   throw new Error('NODE_ENV must be development, test, or production.');
 }
 
+const jwtSecret = process.env.JWT_SECRET?.trim() ?? '';
+
+if (jwtSecret.length < 32) {
+  throw new Error('JWT_SECRET must contain at least 32 characters.');
+}
+
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN?.trim() || '1h';
+
 export const env = Object.freeze({
   NODE_ENV: nodeEnv,
   PORT: parsedPort,
@@ -31,4 +40,6 @@ export const env = Object.freeze({
     process.env.CLIENT_ORIGIN ?? 'http://127.0.0.1:5173',
   API_PREFIX: '/api/v1',
   MONGODB_URI: process.env.MONGODB_URI?.trim() ?? '',
+  JWT_SECRET: jwtSecret,
+  JWT_EXPIRES_IN: jwtExpiresIn,
 });
