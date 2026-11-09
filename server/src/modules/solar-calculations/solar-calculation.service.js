@@ -584,11 +584,16 @@ export async function createSolarCalculation(user, leadId, payload = {}) {
   }
 
   reasons.push(buildReason(
-    'ROOF_AREA_NOT_AVAILABLE',
-    'Roof-area constraint',
-    'No roof-area value is available in the current lead schema',
-    'The recommendation is consumption-based and must be checked against usable roof area and site conditions during technical survey.',
-    null
+    'ROOF_SITE_REVIEW',
+    'Customer-provided roof information',
+    'Roof type and area are recorded for survey review; no generic square-feet-per-kW conversion is assumed',
+    lead.roofType && Number.isFinite(lead.roofAreaSqFt)
+      ? 'Customer reported ' + lead.roofType + ' with ' + lead.roofAreaSqFt + ' sq. ft. The surveyor must confirm usable area, shade, orientation and structural suitability.'
+      : 'Roof type or area is missing. Confirm usable area, shade, orientation and structural suitability during the site survey.',
+    {
+      roofType: lead.roofType ?? null,
+      roofAreaSqFt: lead.roofAreaSqFt ?? null,
+    }
   ));
 
   const calculationInputs = {
@@ -598,6 +603,10 @@ export async function createSolarCalculation(user, leadId, payload = {}) {
     annualConsumptionUnits,
     monthlyElectricityBill: monthlyBill,
     monthlyElectricityBillSource: monthlyBill === null ? 'unavailable' : 'lead_form',
+    pincode: lead.pincode ?? null,
+    roofType: lead.roofType ?? null,
+    roofAreaSqFt: lead.roofAreaSqFt ?? null,
+    homeownerDeclaredSanctionedLoadKW: lead.sanctionedLoad ?? null,
     impliedAverageTariffPerUnit: impliedAverageTariffPerUnit === null
       ? null
       : roundTo(impliedAverageTariffPerUnit, 4),
