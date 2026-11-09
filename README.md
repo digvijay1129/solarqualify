@@ -61,13 +61,14 @@ The application follows a modular monolithic architecture.
 
 ## Core Workflow
 
-1. Homeowner submits a solar enquiry.
-2. Homeowner uploads an electricity bill.
-3. OCR extracts relevant information.
-4. Sales staff verifies extracted values.
-5. The system calculates lead priority and recommended solar capacity.
-6. Sales staff generates a quotation.
-7. Customer and staff track project progress.
+1. Homeowner registers or signs in.
+2. Homeowner submits a solar enquiry.
+3. Homeowner uploads an electricity bill.
+4. OCR extracts relevant information.
+5. Sales staff verifies extracted values.
+6. The system calculates lead priority and recommended solar capacity.
+7. Sales staff generates a quotation.
+8. Customer and staff track project progress.
 
 ## Project Development Approach
 
@@ -87,7 +88,7 @@ Development is organized into phases:
 - The application is developed using JavaScript only.
 - No TypeScript is used.
 - Static data is used during initial frontend development.
-- Static repositories will be replaced with backend API repositories during integration.
+- Static feature repositories are being replaced with backend API repositories during integration.
 - OCR results require human verification.
 - Solar calculations use fixed formulas, not AI-generated calculations.
 - Subsidy and pricing rules are configurable and versioned.
@@ -103,9 +104,11 @@ Backend development through Phase 4.14 is implemented in the repository:
 - Project lifecycle, public status links, simulated notifications and audit logs.
 - Role-scoped MongoDB dashboard analytics and reporting APIs.
 
-Frontend API integration, end-to-end verification, production deployment and final release activities remain in the development roadmap.
+**Phase 4.15.1 and 4.15.2 are implemented:** shared frontend API infrastructure, normalized API errors, Bearer-token storage/session restoration, homeowner registration, email/password login, logout, current-user verification, and role-protected homeowner/Sales Staff routes.
 
-See the phase documentation in `docs/` for implemented API contracts, assumptions and limitations.
+The remaining dashboard, leads, bill-analysis, pricing, quotation, project and notification repositories still use illustrative mock data. Feature-level API integration, end-to-end verification, production deployment and final release activities remain in the development roadmap.
+
+See [Phase 4.15 API and Authentication Integration](docs/phase-4.15-api-authentication/README.md) and the other phase documentation in `docs/` for API contracts, assumptions and limitations.
 
 ## Assumptions and Limitations
 

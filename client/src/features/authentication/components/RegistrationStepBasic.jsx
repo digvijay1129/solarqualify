@@ -1,4 +1,4 @@
-import { Calendar, Mail, Phone, UserRound } from "lucide-react";
+import { Mail, Phone, UserRound } from "lucide-react";
 import AuthField from "./AuthField.jsx";
 
 function RegistrationStepBasic({ values, errors, onChange }) {
@@ -27,27 +27,19 @@ function RegistrationStepBasic({ values, errors, onChange }) {
         autoComplete="tel-national"
         error={errors.mobileNumber}
       />
-      <AuthField
-        id="email"
-        label="Email Address"
-        icon={Mail}
-        value={values.email}
-        onChange={(value) => onChange("email", value)}
-        placeholder="Enter your email address"
-        type="email"
-        autoComplete="email"
-        error={errors.email}
-      />
-      <AuthField
-        id="dateOfBirth"
-        label="Date of Birth"
-        icon={Calendar}
-        value={values.dateOfBirth}
-        onChange={(value) => onChange("dateOfBirth", value)}
-        type="date"
-        optional
-        error={errors.dateOfBirth}
-      />
+      <div className="sm:col-span-2">
+        <AuthField
+          id="email"
+          label="Email Address"
+          icon={Mail}
+          value={values.email}
+          onChange={(value) => onChange("email", value)}
+          placeholder="Enter your email address"
+          type="email"
+          autoComplete="email"
+          error={errors.email}
+        />
+      </div>
     </div>
   );
 }

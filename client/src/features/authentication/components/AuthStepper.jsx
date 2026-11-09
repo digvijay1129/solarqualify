@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 
 function AuthStepper({ steps, currentStep }) {
   return (
-    <ol aria-label="Registration progress" className="grid grid-cols-4 gap-1 sm:gap-2">
+    <ol aria-label="Registration progress" className="grid grid-cols-2 gap-2">
       {steps.map((step, index) => {
         const complete = step.id < currentStep;
         const current = step.id === currentStep;

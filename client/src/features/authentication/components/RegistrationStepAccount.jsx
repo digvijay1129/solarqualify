@@ -11,7 +11,7 @@ function RegistrationStepAccount({ values, errors, onChange }) {
       <div className="rounded-xl bg-slate-50 p-4">
         <p className="text-sm font-bold text-brand-text">Account summary</p>
         <p className="mt-1 text-sm text-brand-muted">{values.fullName || "Homeowner"} · {values.email || "Email address"}</p>
-        <p className="mt-1 text-xs text-brand-muted">The demo will validate the form only. No account will be created until the backend is connected.</p>
+        <p className="mt-1 text-xs leading-5 text-brand-muted">Your account is created through the SolarQualify API. Your password is hashed by the server and is never returned in the response.</p>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
@@ -56,13 +56,13 @@ function RegistrationStepAccount({ values, errors, onChange }) {
           onChange={(event) => onChange("termsAccepted", event.target.checked)}
           className="mt-0.5 h-4 w-4 shrink-0 accent-green-700"
         />
-        <span>I acknowledge the terms and privacy notice for this demo registration.</span>
+        <span>I acknowledge the terms and privacy notice for this account registration.</span>
       </label>
       {errors.termsAccepted && <p className="-mt-2 text-xs font-medium text-red-600">{errors.termsAccepted}</p>}
 
       <div className="flex items-start gap-2 rounded-xl bg-green-50 px-3.5 py-3 text-xs leading-5 text-green-950">
         <ShieldCheck size={18} className="mt-0.5 shrink-0 text-brand-emerald" />
-        <p>Do not use a real password in this frontend prototype. The password is held in component memory only and is not sent or saved.</p>
+        <p>Use a strong password. It is sent to the configured API over the current connection and hashed on the server; production deployments must use HTTPS.</p>
       </div>
     </div>
   );

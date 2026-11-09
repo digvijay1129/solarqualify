@@ -14,7 +14,7 @@ function HomeownerPortalLayout() {
             <Outlet />
           </main>
           <footer className="px-4 pb-5 text-center text-[10px] leading-5 text-slate-500 sm:px-6">
-            SolarQualify homeowner demo portal. Sample data and actions are temporary browser-session interactions; no account, document, message or project update is sent to a server.
+            SolarQualify homeowner portal. Some project, document and notification content remains illustrative while the related feature APIs are integrated.
           </footer>
         </div>
       </div>

@@ -35,15 +35,14 @@ describe("authentication validation", () => {
   });
 });
 
-describe("homeowner registration — step 1", () => {
+describe("homeowner registration — contact details", () => {
   const valid = {
     fullName: "Asha Patil",
     mobileNumber: "9876543210",
     email: "asha@example.com",
-    dateOfBirth: "",
   };
 
-  it("accepts valid basic details", () => {
+  it("accepts valid contact details", () => {
     expect(validateRegistrationStep(1, valid)).toEqual({});
   });
 
@@ -56,77 +55,12 @@ describe("homeowner registration — step 1", () => {
     expect(validateRegistrationStep(1, { ...valid, mobileNumber: "98765432101" }).mobileNumber).toBeTruthy();
   });
 
-  it("allows an optional date of birth", () => {
-    expect(validateRegistrationStep(1, { ...valid, dateOfBirth: "" })).toEqual({});
-  });
-
-  it("rejects a future date of birth", () => {
-    expect(validateRegistrationStep(1, { ...valid, dateOfBirth: "2099-01-01" }).dateOfBirth).toBeTruthy();
+  it("requires a valid email", () => {
+    expect(validateRegistrationStep(1, { ...valid, email: "not-an-email" }).email).toBeTruthy();
   });
 });
 
-describe("homeowner registration — step 2", () => {
-  const valid = {
-    houseFlatNo: "12/A",
-    addressLine1: "Main Road",
-    addressLine2: "",
-    city: "Pune",
-    state: "Maharashtra",
-    pincode: "411001",
-  };
-
-  it("accepts valid address details", () => {
-    expect(validateRegistrationStep(2, valid)).toEqual({});
-  });
-
-  it("requires house or flat number and address line", () => {
-    const errors = validateRegistrationStep(2, { ...valid, houseFlatNo: "", addressLine1: "" });
-    expect(errors.houseFlatNo).toBeTruthy();
-    expect(errors.addressLine1).toBeTruthy();
-  });
-
-  it("requires a six-digit pincode", () => {
-    expect(validateRegistrationStep(2, { ...valid, pincode: "41101" }).pincode).toBeTruthy();
-  });
-
-  it("requires a state", () => {
-    expect(validateRegistrationStep(2, { ...valid, state: "" }).state).toBeTruthy();
-  });
-});
-
-describe("homeowner registration — step 3", () => {
-  const valid = {
-    ownershipStatus: "owner",
-    roofType: "RCC",
-    roofAreaSqFt: "600",
-    monthlyElectricityBill: "3200",
-  };
-
-  it("accepts valid property and solar details", () => {
-    expect(validateRegistrationStep(3, valid)).toEqual({});
-  });
-
-  it("requires owner or tenant selection", () => {
-    expect(validateRegistrationStep(3, { ...valid, ownershipStatus: "" }).ownershipStatus).toBeTruthy();
-  });
-
-  it("requires a supported roof type", () => {
-    expect(validateRegistrationStep(3, { ...valid, roofType: "Unknown" }).roofType).toBeTruthy();
-  });
-
-  it("requires roof area greater than zero", () => {
-    expect(validateRegistrationStep(3, { ...valid, roofAreaSqFt: "0" }).roofAreaSqFt).toBeTruthy();
-    expect(validateRegistrationStep(3, { ...valid, roofAreaSqFt: "-5" }).roofAreaSqFt).toBeTruthy();
-  });
-
-  it("allows zero monthly electricity bill but rejects negative or invalid values", () => {
-    expect(validateRegistrationStep(3, { ...valid, monthlyElectricityBill: "0" })).toEqual({});
-    expect(validateRegistrationStep(3, { ...valid, monthlyElectricityBill: "-1" }).monthlyElectricityBill).toBeTruthy();
-    expect(validateRegistrationStep(3, { ...valid, monthlyElectricityBill: "x" }).monthlyElectricityBill).toBeTruthy();
-  });
-});
-
-describe("homeowner registration — step 4", () => {
+describe("homeowner registration — account credentials", () => {
   const valid = {
     password: "Solar123",
     confirmPassword: "Solar123",
@@ -134,22 +68,26 @@ describe("homeowner registration — step 4", () => {
   };
 
   it("accepts matching password and acknowledgement", () => {
-    expect(validateRegistrationStep(4, valid)).toEqual({});
+    expect(validateRegistrationStep(2, valid)).toEqual({});
   });
 
   it("requires a password of at least eight characters", () => {
-    expect(validateRegistrationStep(4, { ...valid, password: "short" }).password).toBeTruthy();
+    expect(validateRegistrationStep(2, { ...valid, password: "short" }).password).toBeTruthy();
+  });
+
+  it("enforces the API's 72-byte password limit", () => {
+    expect(validateRegistrationStep(2, { ...valid, password: "é".repeat(37) }).password).toBeTruthy();
   });
 
   it("requires matching passwords", () => {
-    expect(validateRegistrationStep(4, { ...valid, confirmPassword: "different" }).confirmPassword).toBeTruthy();
+    expect(validateRegistrationStep(2, { ...valid, confirmPassword: "different" }).confirmPassword).toBeTruthy();
   });
 
   it("requires terms acknowledgement", () => {
-    expect(validateRegistrationStep(4, { ...valid, termsAccepted: false }).termsAccepted).toBeTruthy();
+    expect(validateRegistrationStep(2, { ...valid, termsAccepted: false }).termsAccepted).toBeTruthy();
   });
 
   it("rejects an unknown step number", () => {
-    expect(validateRegistrationStep(5, {}).form).toBeTruthy();
+    expect(validateRegistrationStep(3, {}).form).toBeTruthy();
   });
 });
