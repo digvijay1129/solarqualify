@@ -60,7 +60,7 @@ async function seedLead(salesStaff, sample) {
         monthlyElectricityBill: sample.monthlyElectricityBill,
         monthlyUnits: sample.monthlyUnits,
         consent: true,
-        status: 'new',
+        status: sample.referenceId === 'LD-30881' ? 'qualified' : 'new',
       },
       $setOnInsert: { referenceId: sample.referenceId },
     },
