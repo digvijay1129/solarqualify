@@ -108,6 +108,49 @@ export async function getQuotation(user, quotationId) {
   validateId(quotationId, 'quotation ID');
   return toDTO(await accessibleQuotation(user, quotationId));
 }
+/**
+ * Records an explicit homeowner decision. Only the lead owner may decide,
+ * and only a formal generated/sent quotation can be accepted or rejected.
+ */
+export async function decideQuotation(user, quotationId, payload = {}) {
+  if (!user || user.role !== 'homeowner' || !mongoose.isValidObjectId(user.id)) {
+    throw new AppError('Only the homeowner can accept or reject a quotation.', 403);
+  }
+  validateId(quotationId, 'quotation ID');
+
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload) ||
+      Object.keys(payload).some((key) => key !== 'decision') ||
+      !['accepted', 'rejected'].includes(payload.decision)) {
+    throw new AppError('Decision must be either accepted or rejected.', 400);
+  }
+
+  const current = await accessibleQuotation(user, quotationId);
+  if (!['generated', 'sent'].includes(current.quotationStatus)) {
+    throw new AppError('Only a generated or sent quotation can receive a customer decision.', 409);
+  }
+
+  const updated = await Quotation.findOneAndUpdate(
+    {
+      _id: current._id,
+      leadId: current.leadId,
+      quotationStatus: { $in: ['generated', 'sent'] },
+    },
+    {
+      $set: {
+        quotationStatus: payload.decision,
+        customerDecisionAt: new Date(),
+      },
+    },
+    { new: true, runValidators: true }
+  ).lean();
+
+  if (!updated) {
+    throw new AppError('The quotation status changed before your decision was saved. Refresh and try again.', 409);
+  }
+
+  return toDTO(updated);
+}
+
 export async function downloadQuotationPdf(user, quotationId) {
   requireUser(user);
   validateId(quotationId, 'quotation ID');
