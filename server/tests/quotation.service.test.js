@@ -25,6 +25,7 @@ import {
   getLeadQuotations,
   getQuotation,
   downloadQuotationPdf,
+  decideQuotation,
 } from '../src/modules/quotations/quotation.service.js';
 
 const STAFF_ID = '507f1f77bcf86cd799439012';
@@ -143,6 +144,39 @@ describe('Quotation Service', () => {
     mockLead(null);
     await expect(getQuotation({ id: OTHER_STAFF_ID, role: 'salesStaff' }, QUOTATION_ID))
       .rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('allows the owning homeowner to accept a generated quotation', async () => {
+    Quotation.findById.mockReturnValue(query(quotation));
+    mockLead({ _id: LEAD_ID });
+
+    const result = await decideQuotation(homeowner, QUOTATION_ID, { decision: 'accepted' });
+
+    expect(Quotation.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: QUOTATION_ID,
+        leadId: LEAD_ID,
+        quotationStatus: { $in: ['generated', 'sent'] },
+      }),
+      { $set: expect.objectContaining({
+        quotationStatus: 'accepted',
+        customerDecisionAt: expect.any(Date),
+      }) },
+      expect.objectContaining({ new: true, runValidators: true })
+    );
+    expect(result.quotationStatus).toBe('accepted');
+  });
+
+  it('does not allow Sales Staff to make a customer quotation decision', async () => {
+    await expect(decideQuotation(staff, QUOTATION_ID, { decision: 'accepted' }))
+      .rejects.toMatchObject({ statusCode: 403 });
+    expect(Quotation.findById).not.toHaveBeenCalled();
+  });
+
+  it('rejects unsupported or invalid customer quotation decisions', async () => {
+    await expect(decideQuotation(homeowner, QUOTATION_ID, { decision: 'maybe' }))
+      .rejects.toMatchObject({ statusCode: 400 });
+    expect(Quotation.findById).not.toHaveBeenCalled();
   });
 
   it('downloads a PDF for a formal quotation', async () => {
