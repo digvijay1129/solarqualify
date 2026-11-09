@@ -68,7 +68,10 @@ const quotationSchema = new mongoose.Schema({
 
 quotationSchema.index({ leadId: 1, createdAt: -1 });
 quotationSchema.index({ quotationStatus: 1, createdAt: -1 });
-quotationSchema.index({ quotationNumber: 1 }, { unique: true, sparse: true });
+quotationSchema.index(
+  { quotationNumber: 1 },
+  { unique: true, partialFilterExpression: { quotationNumber: { $type: 'string' } } }
+);
 
 const Quotation = mongoose.model('Quotation', quotationSchema);
 export default Quotation;

@@ -36,7 +36,7 @@ describe('Quotation PDF Generation', () => {
 
   it('includes customer, system, financial and rule snapshot information', () => {
     const pdf = generateQuotationPdf(quotation).toString('ascii');
-    for (const value of ['Test Customer', 'Recommended solar system', 'Equipment cost',
+    for (const value of ['Test Customer', 'RECOMMENDED SOLAR SYSTEM', 'Equipment cost',
       'Installation charges', 'Residential Pricing', 'Residential Subsidy',
       'Standard Generation', 'Annual consumption']) {
       expect(pdf).toContain(value);
