@@ -88,6 +88,10 @@ describe('Lead Service', () => {
       propertyAddress: 'Pune, Maharashtra',
       propertyType: 'residential',
       ownership: 'owner',
+      pincode: '440001',
+      roofType: 'RCC Flat Roof',
+      roofAreaSqFt: 900,
+      sanctionedLoad: 5,
       consent: true,
 
       // These untrusted fields must not override server-controlled values.
@@ -104,6 +108,13 @@ describe('Lead Service', () => {
     expect(savedInput.homeownerId).toBe(HOMEOWNER_ID);
     expect(savedInput.assignedSalesStaffId).toBeNull();
     expect(savedInput.consent).toBe(true);
+    expect(savedInput.pincode).toBe('440001');
+    expect(savedInput.roofType).toBe('RCC Flat Roof');
+    expect(savedInput.roofAreaSqFt).toBe(900);
+    expect(savedInput.sanctionedLoad).toBe(5);
+    expect(savedInput.sanctionedLoadUnit).toBe('kW');
+    expect(result.pincode).toBe('440001');
+    expect(result.roofAreaSqFt).toBe(900);
     expect(savedInput).not.toHaveProperty('priority');
     expect(savedInput).not.toHaveProperty('leadScore');
     expect(savedInput).not.toHaveProperty('status');
@@ -129,6 +140,19 @@ describe('Lead Service', () => {
         assignedSalesStaffId: STAFF_ID,
       })
     );
+  });
+
+  it('should reject an invalid six-digit pincode', async () => {
+    await expect(createLead(homeowner, {
+      customerName: 'Customer Name',
+      email: 'customer@example.com',
+      phone: '9876543210',
+      propertyAddress: 'Nagpur, Maharashtra',
+      pincode: '4400X1',
+      consent: true,
+    })).rejects.toMatchObject({ statusCode: 400, message: 'Pincode must contain exactly 6 digits.' });
+
+    expect(Lead.create).not.toHaveBeenCalled();
   });
 
   it('should reject lead creation without customer consent', async () => {
