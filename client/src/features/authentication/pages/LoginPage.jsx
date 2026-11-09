@@ -7,7 +7,7 @@ import AuthShell from "../components/AuthShell.jsx";
 import RoleSelector from "../components/RoleSelector.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { validateSignIn } from "../utils/authentication-validation.js";
-import { authenticationFixture } from "../../../mocks/fixtures/authentication.fixture.js";
+import { authenticationContent } from "../constants/authentication-content.js";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ function LoginPage() {
   }
 
   return (
-    <AuthShell benefits={authenticationFixture.loginBenefits} compact>
+    <AuthShell benefits={authenticationContent.loginBenefits} compact>
       <div className="mx-auto w-full max-w-[660px]">
         <header className="text-center">
           <h2 className="text-[clamp(1.8rem,3vw,2.7rem)] font-black tracking-tight text-brand-text">Welcome to <span className="text-brand-forest">SolarQualify</span></h2>
@@ -59,7 +59,7 @@ function LoginPage() {
         </header>
 
         <form onSubmit={handleSubmit} noValidate autoComplete="on" className="mt-5 space-y-4 sm:mt-6 sm:space-y-[18px] lg:mt-4 lg:space-y-3">
-          <RoleSelector roles={authenticationFixture.roles} value={role} onChange={(value) => { setRole(value); setNotice(null); }} />
+          <RoleSelector roles={authenticationContent.roles} value={role} onChange={(value) => { setRole(value); setNotice(null); }} />
           {role === "sales-staff" && (
             <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
               Sales Staff accounts must be provisioned by an administrator. Staff self-registration is not enabled.

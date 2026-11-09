@@ -144,7 +144,7 @@ function RecentLeadsTable({ leads = [] }) {
                       </td>
 
                       <td className="whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-brand-text">
-                        {currencyFormatter.format(lead.monthlyBill)}
+                        {lead.monthlyBill == null ? "Not provided" : currencyFormatter.format(lead.monthlyBill)}
                       </td>
 
                       <td className="whitespace-nowrap px-4 py-2.5 text-sm font-semibold text-brand-text">
@@ -246,7 +246,7 @@ function RecentLeadsTable({ leads = [] }) {
         <div className="border-t border-brand-border px-5 py-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-brand-muted">
-              Illustrative demonstration records. Low priority does not mean rejected.
+              Live lead records from your authorized account. Low priority is a follow-up indicator, not a rejection decision.
             </p>
 
             {copiedLeadId && (
@@ -291,7 +291,7 @@ function RecentLeadsTable({ leads = [] }) {
                 </h2>
 
                 <p className="mt-1 text-sm text-brand-muted">
-                  Illustrative demo record
+                  Live lead record
                 </p>
               </div>
 
@@ -324,21 +324,21 @@ function RecentLeadsTable({ leads = [] }) {
                 <div>
                   <p className="text-xs text-brand-muted">Monthly Bill</p>
                   <p className="mt-1 text-sm font-semibold text-brand-text">
-                    {currencyFormatter.format(selectedLead.monthlyBill)}
+                    {selectedLead.monthlyBill == null ? "Not provided" : currencyFormatter.format(selectedLead.monthlyBill)}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-brand-muted">Monthly Units</p>
                   <p className="mt-1 text-sm font-semibold text-brand-text">
-                    {Number(selectedLead.monthlyUnits).toLocaleString("en-IN")}
+                    {selectedLead.monthlyUnits == null ? "Not provided" : Number(selectedLead.monthlyUnits).toLocaleString("en-IN")}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-xs text-brand-muted">Ownership</p>
                   <p className="mt-1 text-sm font-semibold text-brand-text">
-                    {selectedLead.ownership}
+                    {selectedLead.ownership || "Not provided"}
                   </p>
                 </div>
 
@@ -364,9 +364,8 @@ function RecentLeadsTable({ leads = [] }) {
                 </div>
               </div>
 
-              <p className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800">
-                Display values are for demonstration. System sizing and lead
-                status must be confirmed using verified application data.
+              <p className="rounded-lg bg-blue-50 p-3 text-xs leading-5 text-blue-900">
+                Details are returned by the live lead API. Recommended system size may remain pending until bill verification and qualification are complete.
               </p>
             </div>
           </section>

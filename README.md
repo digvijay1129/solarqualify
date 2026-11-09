@@ -103,14 +103,15 @@ Backend development through Phase 4.14 is implemented in the repository:
 - Project lifecycle, public status links, simulated notifications and audit logs.
 - Role-scoped MongoDB dashboard analytics and reporting APIs.
 
-Phase 4.15.1–4.15.8 are implemented: shared API infrastructure and authentication; protected homeowner and Sales Staff routes; live homeowner dashboard, enquiry submission, private bill upload/OCR, quotation history/PDF download and project tracking; Sales Staff lead listing, filters, pagination, details, self-assignment and explainable scoring; Bill Analysis OCR/manual verification; Pricing/Subsidy/Generation rule management; formal quotation generation, saved history and PDF downloads; plus live project listing, lifecycle updates, activity/notifications and public customer tracking links.
+Phase 4.15.1–4.15.10 are implemented: shared API infrastructure and authentication; protected homeowner and Sales Staff routes; live homeowner enquiry, bill and quotation workflows; live lead listing, scoring and bill verification; versioned business-rule management; formal quotation generation and PDF downloads; live project lifecycle and customer tracking; plus the Sales Staff dashboard migrated to role-scoped backend analytics. Production dashboard and authentication services no longer import mock repositories. Fixtures and sample repositories remain in the repository for tests and design reference only.
 
-The Sales Staff Dashboard Analytics UI remains to be migrated from its demo repository. Project document upload and free-form project notes are not available because the current backend has no corresponding endpoints. Some homeowner profile, support and preference interactions remain session-only. See the Phase 4.15 documentation for exact endpoint mapping and limitations.
+The Sales Staff Dashboard reads live lead, priority, quotation and project analytics, plus recent authorized leads. Its period selector supports 6, 12 and 24 calendar months. The API does not track realized revenue, historical lead status events or period-over-period growth; these are labelled as unavailable rather than inferred. Project document upload and free-form project notes are not available because the current backend has no corresponding endpoints. Some homeowner profile, support and preference interactions remain session-only. See the Phase 4.15 documentation for exact endpoint mapping and limitations.
 
 - Phase 4.15.1–4.15.2 API and Authentication: docs/phase-4.15-api-authentication/README.md
 - Phase 4.15.3–4.15.4 Homeowner and Lead Management: docs/phase-4.15.3-4.15.4-homeowner-leads/README.md
 - Phase 4.15.5–4.15.6 Bill Analysis and Business Rules: docs/phase-4.15.5-4.15.6-bill-pricing/README.md
 - Phase 4.15.7–4.15.8 Quotations and Projects: docs/phase-4.15.7-4.15.8-quotations-projects/README.md
+- Phase 4.15.9–4.15.10 Dashboard Analytics and Mock Removal: docs/phase-4.15.9-4.15.10-dashboard-mock-cleanup/README.md
 
 ## Assumptions and Limitations
 

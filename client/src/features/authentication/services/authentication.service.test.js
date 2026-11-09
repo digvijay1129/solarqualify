@@ -4,11 +4,6 @@ vi.mock("../../../services/api/api-client.js", () => ({
   apiRequest: vi.fn(),
 }));
 
-vi.mock("../../../mocks/repositories/authentication.repository.js", () => ({
-  getAuthenticationContent: vi.fn(),
-  submitDemoPasswordReset: vi.fn().mockResolvedValue({ requested: false }),
-}));
-
 import { apiRequest } from "../../../services/api/api-client.js";
 import {
   getCurrentUser,

@@ -9,10 +9,7 @@ import {
   YAxis,
 } from "recharts";
 
-import {
-  ChartNoAxesColumnIncreasing,
-  ChevronDown,
-} from "lucide-react";
+import { ChartNoAxesColumnIncreasing } from "lucide-react";
 
 function LeadValueLabel({ x, y, value }) {
   if (x == null || y == null || value == null) {
@@ -43,7 +40,7 @@ function LeadValueLabel({ x, y, value }) {
   );
 }
 
-function MonthlyLeadTrend({ data = [] }) {
+function MonthlyLeadTrend({ data = [], periodLabel = "Selected period" }) {
   return (
     <section className="min-w-0 overflow-hidden rounded-2xl border border-brand-border bg-white p-5 shadow-card sm:p-6">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -61,11 +58,10 @@ function MonthlyLeadTrend({ data = [] }) {
         </div>
 
         <span
-          aria-label="Displayed period: Last 6 Months"
-          className="inline-flex h-9 items-center gap-3 rounded-xl border border-brand-border bg-white px-3 text-sm font-medium text-brand-text shadow-sm"
+          aria-label={`Displayed period: ${periodLabel}`}
+          className="inline-flex h-9 items-center rounded-xl border border-brand-border bg-white px-3 text-xs font-medium text-brand-text shadow-sm"
         >
-          Last 6 Months
-          <ChevronDown size={16} aria-hidden="true" />
+          {periodLabel}
         </span>
       </div>
 
@@ -116,8 +112,7 @@ function MonthlyLeadTrend({ data = [] }) {
               />
 
               <YAxis
-                domain={[0, 300]}
-                ticks={[0, 50, 100, 150, 200, 250, 300]}
+                domain={[0, "auto"]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#344054", fontSize: 12 }}

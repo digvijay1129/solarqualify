@@ -8,7 +8,7 @@ import RegistrationStepAccount from "../components/RegistrationStepAccount.jsx";
 import RegistrationStepBasic from "../components/RegistrationStepBasic.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { validateRegistrationStep } from "../utils/authentication-validation.js";
-import { authenticationFixture } from "../../../mocks/fixtures/authentication.fixture.js";
+import { authenticationContent } from "../constants/authentication-content.js";
 
 const registrationSteps = [
   { id: 1, label: "Contact Details", title: "Contact Details", description: "Tell us how to identify and contact you." },
@@ -85,7 +85,7 @@ function HomeownerRegistrationPage() {
     <AuthShell
       heroTitle={<>Create Your <span className="text-green-800">Homeowner</span> Account</>}
       heroDescription="Create your SolarQualify account to access your homeowner portal and continue with a solar enquiry."
-      benefits={authenticationFixture.registrationBenefits}
+      benefits={authenticationContent.registrationBenefits}
       benefitLayout="list"
     >
       <div className="w-full">

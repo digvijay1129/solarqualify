@@ -1,12 +1,7 @@
 import { apiRequest } from "../../../services/api/api-client.js";
-import { getAuthenticationContent, submitDemoPasswordReset } from "../../../mocks/repositories/authentication.repository.js";
 
 function unwrapAuthResult(response) {
   return response?.data ?? response;
-}
-
-export function getAuthContent() {
-  return getAuthenticationContent();
 }
 
 export async function signIn(credentials) {
@@ -48,8 +43,4 @@ export async function signOut(accessToken) {
     method: "POST",
     accessToken,
   });
-}
-
-export function requestPasswordResetDemo() {
-  return submitDemoPasswordReset();
 }

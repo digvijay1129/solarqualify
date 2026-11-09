@@ -1,4 +1,4 @@
-import { projectStages } from "../../../mocks/fixtures/project-tracker.fixture.js";
+import { projectStages } from "../constants/project-stages.js";
 
 export function calculateAnnualGeneration(capacityKw, unitsPerKwPerYear = 1400) {
   const capacity = Number(capacityKw);

@@ -4,9 +4,8 @@ import { Link } from "react-router-dom";
 import AuthField from "../components/AuthField.jsx";
 import AuthNotice from "../components/AuthNotice.jsx";
 import AuthShell from "../components/AuthShell.jsx";
-import { requestPasswordResetDemo } from "../services/authentication.service.js";
 import { isValidEmail } from "../utils/authentication-validation.js";
-import { authenticationFixture } from "../../../mocks/fixtures/authentication.fixture.js";
+import { authenticationContent } from "../constants/authentication-content.js";
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -23,15 +22,14 @@ function ForgotPasswordPage() {
     }
 
     setError("");
-    const result = await requestPasswordResetDemo();
-    setNotice({ tone: "warning", message: result.message });
+    setNotice({ tone: "warning", message: "Password reset is not available because the current SolarQualify API does not expose a password-reset endpoint. Contact an administrator for account assistance." });
   }
 
   return (
     <AuthShell
       heroTitle="A Brighter Solar Journey Starts Here"
       heroDescription="Return to SolarQualify to review your solar enquiry, quotations and project progress."
-      benefits={authenticationFixture.loginBenefits}
+      benefits={authenticationContent.loginBenefits}
     >
       <div className="mx-auto w-full max-w-[600px]">
         <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mint-soft text-brand-forest">
@@ -60,7 +58,7 @@ function ForgotPasswordPage() {
             <ArrowLeft size={17} /> Back to Sign In
           </Link>
         </form>
-        <p className="mt-5 text-center text-[11px] leading-5 text-slate-500">Password-reset email delivery is not connected in this frontend demo.</p>
+        <p className="mt-5 text-center text-[11px] leading-5 text-slate-500">Password reset is not supported by the current backend API.</p>
       </div>
     </AuthShell>
   );
