@@ -174,5 +174,5 @@ Set `CLIENT_ORIGIN` to the exact deployed Vercel origin. Set the Vercel `VITE_AP
 
 ## 9. Known scope boundaries
 
-This assessment build mocks external payments and WhatsApp/SMS delivery. In-app notification records are simulated. There is no government subsidy-portal filing, DISCOM integration, inventory/purchasing workflow, inverter monitoring, homeowner quotation acceptance workflow, project document upload API, or persisted homeowner profile/support preference workflow. See `docs/assumptions.md` and the Phase 4.15 implementation notes.
+This assessment build mocks external payments and WhatsApp/SMS delivery. In-app notification records are simulated. Homeowner quotation acceptance/rejection is implemented. There is no government subsidy-portal filing, DISCOM integration, inventory/purchasing workflow, inverter monitoring, project document upload API, or persisted homeowner profile/support preference workflow. See `docs/assumptions.md` and the Phase 4.15 implementation notes.
 
