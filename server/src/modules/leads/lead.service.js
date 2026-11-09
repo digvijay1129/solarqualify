@@ -84,7 +84,12 @@ function toLeadDTO(lead) {
     email: lead.email,
     phone: lead.phone,
     location: lead.propertyAddress || null,
+    pincode: lead.pincode ?? null,
     propertyType: lead.propertyType,
+    roofType: lead.roofType ?? null,
+    roofAreaSqFt: lead.roofAreaSqFt ?? null,
+    sanctionedLoad: lead.sanctionedLoad ?? null,
+    sanctionedLoadUnit: lead.sanctionedLoadUnit ?? null,
     ownership:
       lead.ownership === 'owner'
         ? 'Owner'
@@ -309,6 +314,30 @@ export async function createLead(user, input) {
     throw new AppError('Invalid property ownership type.', 400);
   }
 
+  const pincode = input.pincode === undefined || input.pincode === null || input.pincode === ''
+    ? null
+    : validateString(input.pincode, 'Pincode', 6, 6);
+
+  if (pincode !== null && !/^\\d{6}$/.test(pincode)) {
+    throw new AppError('Pincode must contain exactly 6 digits.', 400);
+  }
+
+  const allowedRoofTypes = ['RCC Flat Roof', 'Tiled Roof', 'Metal Sheet', 'Other'];
+  const roofType = input.roofType ?? null;
+  if (roofType !== null && !allowedRoofTypes.includes(roofType)) {
+    throw new AppError('Invalid roof type.', 400);
+  }
+
+  const roofAreaSqFt = validateOptionalNumber(input.roofAreaSqFt, 'Roof area');
+  if (roofAreaSqFt !== null && roofAreaSqFt <= 0) {
+    throw new AppError('Roof area must be greater than zero.', 400);
+  }
+
+  const sanctionedLoad = validateOptionalNumber(input.sanctionedLoad, 'Sanctioned load');
+  if (sanctionedLoad !== null && sanctionedLoad <= 0) {
+    throw new AppError('Sanctioned load must be greater than zero.', 400);
+  }
+
   const lead = await Lead.create({
     homeownerId: user.role === 'homeowner' ? user.id : null,
     assignedSalesStaffId: user.role === 'salesStaff' ? user.id : null,
@@ -318,6 +347,11 @@ export async function createLead(user, input) {
     propertyAddress,
     propertyType,
     ownership,
+    pincode,
+    roofType,
+    roofAreaSqFt,
+    sanctionedLoad,
+    sanctionedLoadUnit: sanctionedLoad === null ? null : 'kW',
     monthlyElectricityBill: validateOptionalNumber(
       input.monthlyElectricityBill,
       'Monthly electricity bill'
