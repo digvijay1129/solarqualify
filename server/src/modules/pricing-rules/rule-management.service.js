@@ -1,8 +1,10 @@
 import mongoose from 'mongoose';
+import { randomUUID } from 'node:crypto';
 
 import PricingRule from '../pricing/pricing-rule.model.js';
 import SubsidyRule from '../subsidies/subsidy-rule.model.js';
 import GenerationRule from '../generation/generation-rule.model.js';
+import RuleManagementLock from './rule-management-lock.model.js';
 import { AppError } from '../../shared/errors/AppError.js';
 
 const RULE_MODELS = Object.freeze({
@@ -15,6 +17,94 @@ const RULE_STATUSES = new Set(['draft', 'active', 'inactive']);
 const MAX_LIST_LIMIT = 100;
 const MAX_SUBSIDY_SLABS = 20;
 const MAX_DATE = new Date('9999-12-31T23:59:59.999Z');
+
+const RULE_LOCK_LEASE_MS = 30_000;
+const RULE_LOCK_ATTEMPTS = 40;
+const RULE_LOCK_RETRY_MS = 50;
+
+function isDuplicateKeyError(error) {
+  return error?.code === 11000 || error?.code === 11001;
+}
+
+/**
+ * Serializes version creation and active-period checks for one named rule.
+ * The lease expires automatically if the process stops before it can release.
+ */
+async function withRuleLock(ruleType, ruleName, operation) {
+  const lockId = `${ruleType}:${ruleName.trim().toLocaleLowerCase('en-US')}`;
+  const ownerToken = randomUUID();
+  let acquired = false;
+
+  for (let attempt = 0; attempt < RULE_LOCK_ATTEMPTS; attempt += 1) {
+    const now = new Date();
+
+    try {
+      const lock = await RuleManagementLock.findOneAndUpdate(
+        {
+          _id: lockId,
+          $or: [
+            { lockedUntil: null },
+            { lockedUntil: { $lte: now } },
+          ],
+        },
+        {
+          $set: {
+            ruleType,
+            ruleName,
+            ownerToken,
+            lockedUntil: new Date(now.getTime() + RULE_LOCK_LEASE_MS),
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      ).lean();
+
+      if (lock) {
+        acquired = true;
+        break;
+      }
+    } catch (error) {
+      // An upsert against an already-held lock hits its unique _id.
+      if (!isDuplicateKeyError(error)) {
+        throw error;
+      }
+    }
+
+    if (attempt < RULE_LOCK_ATTEMPTS - 1) {
+      await new Promise((resolve) => setTimeout(resolve, RULE_LOCK_RETRY_MS));
+    }
+  }
+
+  if (!acquired) {
+    throw new AppError(
+      'Another request is updating this rule. Retry after a short delay.',
+      409
+    );
+  }
+
+  try {
+    return await operation();
+  } finally {
+    // If releasing fails, the bounded lease prevents a permanent deadlock.
+    try {
+      await RuleManagementLock.updateOne(
+        { _id: lockId, ownerToken },
+        {
+          $set: {
+            ownerToken: null,
+            lockedUntil: null,
+          },
+        }
+      );
+    } catch {
+      // The lock lease is the recovery mechanism for this cleanup failure.
+    }
+  }
+}
+
 
 function getRuleModel(ruleType) {
   const model = RULE_MODELS[ruleType];
@@ -305,10 +395,6 @@ async function findOverlappingActiveRule(
     .lean();
 }
 
-function isDuplicateKeyError(error) {
-  return error?.code === 11000 || error?.code === 11001;
-}
-
 function toRuleDTO(rule) {
   const value = typeof rule?.toObject === 'function'
     ? rule.toObject()
@@ -347,54 +433,56 @@ export async function createRuleVersion(user, ruleType, payload) {
   const model = getRuleModel(ruleType);
   const data = buildCreateData(ruleType, payload, user.id);
 
-  if (data.status === 'active') {
-    const conflict = await findOverlappingActiveRule(
-      model,
-      data.ruleName,
-      data.effectiveFrom,
-      data.effectiveTo
-    );
+  return withRuleLock(ruleType, data.ruleName, async () => {
+    if (data.status === 'active') {
+      if (
+        ruleType === 'subsidies' &&
+        data.verificationStatus !== 'verified'
+      ) {
+        throw new AppError(
+          'A subsidy rule must be verified before it can be activated.',
+          409
+        );
+      }
 
-    if (conflict) {
-      throw new AppError(
-        'This effective period overlaps another active version of the same rule.',
-        409
+      const conflict = await findOverlappingActiveRule(
+        model,
+        data.ruleName,
+        data.effectiveFrom,
+        data.effectiveTo
       );
+
+      if (conflict) {
+        throw new AppError(
+          'This effective period overlaps another active version of the same rule.',
+          409
+        );
+      }
     }
 
-    if (
-      ruleType === 'subsidies' &&
-      data.verificationStatus !== 'verified'
-    ) {
-      throw new AppError(
-        'A subsidy rule must be verified before it can be activated.',
-        409
-      );
+    const latestVersion = await model.findOne({
+      ruleName: data.ruleName,
+    })
+      .sort({ version: -1 })
+      .select('version')
+      .lean();
+
+    data.version = (latestVersion?.version ?? 0) + 1;
+
+    try {
+      const created = await model.create(data);
+      return toRuleDTO(created);
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        throw new AppError(
+          'A rule version with this name was created concurrently. Refresh and retry.',
+          409
+        );
+      }
+
+      throw error;
     }
-  }
-
-  const latestVersion = await model.findOne({
-    ruleName: data.ruleName,
-  })
-    .sort({ version: -1 })
-    .select('version')
-    .lean();
-
-  data.version = (latestVersion?.version ?? 0) + 1;
-
-  try {
-    const created = await model.create(data);
-    return toRuleDTO(created);
-  } catch (error) {
-    if (isDuplicateKeyError(error)) {
-      throw new AppError(
-        'A rule version with this name was created concurrently. Refresh and retry.',
-        409
-      );
-    }
-
-    throw error;
-  }
+  });
 }
 
 /**
@@ -515,70 +603,81 @@ export async function updateRuleStatus(
     );
   }
 
-  const existing = await findRuleById(model, ruleId);
-  const effectiveTo = Object.hasOwn(payload, 'effectiveTo')
-    ? parseDateOnly(
-        payload.effectiveTo,
-        'Effective-to date',
-        { optional: true }
-      )
-    : existing.effectiveTo ?? null;
+  const initial = await findRuleById(model, ruleId);
 
-  validateEffectivePeriod(existing.effectiveFrom, effectiveTo);
+  const performUpdate = async () => {
+    // Re-read inside the lock so overlap checks use the latest version state.
+    const existing = await findRuleById(model, ruleId);
+    const effectiveTo = Object.hasOwn(payload, 'effectiveTo')
+      ? parseDateOnly(
+          payload.effectiveTo,
+          'Effective-to date',
+          { optional: true }
+        )
+      : existing.effectiveTo ?? null;
+
+    validateEffectivePeriod(existing.effectiveFrom, effectiveTo);
+
+    if (status === 'active') {
+      if (
+        ruleType === 'subsidies' &&
+        existing.verificationStatus !== 'verified'
+      ) {
+        throw new AppError(
+          'A subsidy rule must be verified before it can be activated.',
+          409
+        );
+      }
+
+      const conflict = await findOverlappingActiveRule(
+        model,
+        existing.ruleName,
+        existing.effectiveFrom,
+        effectiveTo,
+        existing._id
+      );
+
+      if (conflict) {
+        throw new AppError(
+          'This effective period overlaps another active version of the same rule.',
+          409
+        );
+      }
+    }
+
+    const updated = await model.findOneAndUpdate(
+      {
+        _id: existing._id,
+        status: existing.status,
+        version: existing.version,
+      },
+      {
+        $set: {
+          status,
+          effectiveTo,
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).lean();
+
+    if (!updated) {
+      throw new AppError(
+        'Rule version changed while it was being updated. Refresh and retry.',
+        409
+      );
+    }
+
+    return toRuleDTO(updated);
+  };
 
   if (status === 'active') {
-    if (
-      ruleType === 'subsidies' &&
-      existing.verificationStatus !== 'verified'
-    ) {
-      throw new AppError(
-        'A subsidy rule must be verified before it can be activated.',
-        409
-      );
-    }
-
-    const conflict = await findOverlappingActiveRule(
-      model,
-      existing.ruleName,
-      existing.effectiveFrom,
-      effectiveTo,
-      existing._id
-    );
-
-    if (conflict) {
-      throw new AppError(
-        'This effective period overlaps another active version of the same rule.',
-        409
-      );
-    }
+    return withRuleLock(ruleType, initial.ruleName, performUpdate);
   }
 
-  const updated = await model.findOneAndUpdate(
-    {
-      _id: existing._id,
-      status: existing.status,
-      version: existing.version,
-    },
-    {
-      $set: {
-        status,
-        effectiveTo,
-      },
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  ).lean();
-
-  if (!updated) {
-    throw new AppError(
-      'Rule version changed while it was being updated. Refresh and retry.',
-      409
-    );
-  }
-
-  return toRuleDTO(updated);
+  return performUpdate();
 }
 
 /**

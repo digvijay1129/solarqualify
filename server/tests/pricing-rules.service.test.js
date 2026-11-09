@@ -22,6 +22,10 @@ const modelMocks = vi.hoisted(() => ({
     findOne: vi.fn(),
     findOneAndUpdate: vi.fn(),
   },
+  lock: {
+    findOneAndUpdate: vi.fn(),
+    updateOne: vi.fn(),
+  },
 }));
 
 vi.mock('../src/modules/pricing/pricing-rule.model.js', () => ({
@@ -36,6 +40,11 @@ vi.mock('../src/modules/generation/generation-rule.model.js', () => ({
   default: modelMocks.generation,
 }));
 
+vi.mock('../src/modules/pricing-rules/rule-management-lock.model.js', () => ({
+  default: modelMocks.lock,
+}));
+
+import RuleManagementLock from '../src/modules/pricing-rules/rule-management-lock.model.js';
 import {
   createRuleVersion,
   getRuleVersions,
@@ -85,9 +94,51 @@ function configureModel(model, { latest = null, conflict = null, existing = null
 describe('Rule Management Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    for (const model of Object.values(modelMocks)) {
-      configureModel(model);
+    for (const [name, model] of Object.entries(modelMocks)) {
+      if (name !== 'lock') {
+        configureModel(model);
+      }
     }
+    RuleManagementLock.findOneAndUpdate.mockReturnValue(
+      query({ ownerToken: 'test-lock-owner' })
+    );
+    RuleManagementLock.updateOne.mockResolvedValue({ modifiedCount: 1 });
+  });
+
+  it('serializes version operations with a per-rule lock', async () => {
+    modelMocks.pricing.findOne.mockReturnValue(query(null));
+    modelMocks.pricing.create.mockResolvedValue(createdRule());
+
+    await createRuleVersion(staff, 'pricing', {
+      ruleName: 'Locked Residential',
+      pricePerKW: 65000,
+      effectiveFrom: '2026-12-01',
+    });
+
+    expect(RuleManagementLock.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: 'pricing:locked residential',
+      }),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          ruleType: 'pricing',
+          ruleName: 'Locked Residential',
+        }),
+      }),
+      expect.objectContaining({ upsert: true, new: true })
+    );
+    expect(RuleManagementLock.updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: 'pricing:locked residential',
+        ownerToken: expect.any(String),
+      }),
+      expect.objectContaining({
+        $set: {
+          ownerToken: null,
+          lockedUntil: null,
+        },
+      })
+    );
   });
 
   it('creates the next pricing version as draft and assigns the creator on the server', async () => {
