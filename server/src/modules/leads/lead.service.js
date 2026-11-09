@@ -318,7 +318,7 @@ export async function createLead(user, input) {
     ? null
     : validateString(input.pincode, 'Pincode', 6, 6);
 
-  if (pincode !== null && !/^\\d{6}$/.test(pincode)) {
+  if (pincode !== null && !/^\d{6}$/.test(pincode)) {
     throw new AppError('Pincode must contain exactly 6 digits.', 400);
   }
 
