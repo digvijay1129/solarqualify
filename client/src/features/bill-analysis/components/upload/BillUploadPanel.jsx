@@ -12,9 +12,10 @@ const ACCEPTED_MIME_TYPES = [
   "application/pdf",
   "image/jpeg",
   "image/png",
+  "image/webp",
 ];
 
-const ACCEPTED_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png"];
+const ACCEPTED_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png", ".webp"];
 
 function validateBillFile(file, maxFileSizeMB) {
   if (!file) {
@@ -27,7 +28,7 @@ function validateBillFile(file, maxFileSizeMB) {
     : ACCEPTED_EXTENSIONS.includes(extension);
 
   if (!hasValidType || !ACCEPTED_EXTENSIONS.includes(extension)) {
-    return "Unsupported file format. Please upload a PDF, JPG or PNG file.";
+    return "Unsupported file format. Please upload a PDF, JPG, PNG or WebP file.";
   }
 
   if (file.size > maxFileSizeMB * 1024 * 1024) {
@@ -171,7 +172,7 @@ function BillUploadPanel({
           ref={inputRef}
           id="bill-file-input"
           type="file"
-          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
           onChange={handleInputChange}
           disabled={disabled}
           className="sr-only"
@@ -188,7 +189,7 @@ function BillUploadPanel({
         </button>
 
         <p className="mt-3 text-xs text-brand-muted">
-          Supported formats: PDF, JPG, PNG (Max {maxFileSizeMB} MB)
+          Supported formats: PDF, JPG, PNG, WebP (Max {maxFileSizeMB} MB)
         </p>
       </div>
 

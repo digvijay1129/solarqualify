@@ -23,9 +23,14 @@ const fieldConfig = {
     placeholder: "Enter tariff category",
     icon: FileText,
   },
-  sanctionedLoadKw: {
-    label: "Sanctioned Load (kW)",
+  sanctionedLoad: {
+    label: "Sanctioned Load",
     placeholder: "Enter sanctioned load",
+    icon: Zap,
+  },
+  sanctionedLoadUnit: {
+    label: "Sanctioned Load Unit",
+    placeholder: "kW, kVA or HP",
     icon: Zap,
   },
   monthlyUnits: {
@@ -56,6 +61,9 @@ function ExtractedInformationPanel({
   onConfirmDetails = () => {},
   reviewMessage = "",
   isConfirmed = false,
+  extractionConfidence = null,
+  confirmLabel = "Confirm & Verify",
+  disabled = false,
 }) {
   const isCompleted = extractionStatus === "completed";
 
@@ -136,27 +144,42 @@ function ExtractedInformationPanel({
               </div>
 
               <div className="min-w-0">
-                <input
-                  id={`bill-field-${field.id}`}
-                  type="text"
-                  value={fieldValue}
-                  placeholder={config.placeholder}
-                  readOnly={!editable}
-                  onChange={(event) =>
-                    onFieldChange(field.id, event.target.value)
-                  }
-                  aria-label={config.label}
-                  aria-required={field.required}
-                  aria-invalid={Boolean(error)}
-                  className={[
-                    "h-10 w-full min-w-0 rounded-lg border bg-white px-3 text-sm text-brand-text outline-none placeholder:text-slate-400",
-                    error
-                      ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100"
-                      : editable
-                        ? "border-slate-200 focus:border-brand-emerald focus:ring-2 focus:ring-brand-emerald/10"
-                        : "cursor-default border-slate-200 bg-slate-50",
-                  ].join(" ")}
-                />
+                {field.id === "sanctionedLoadUnit" ? (
+                  <select
+                    id={`bill-field-${field.id}`}
+                    value={fieldValue}
+                    disabled={!editable}
+                    onChange={(event) => onFieldChange(field.id, event.target.value)}
+                    aria-label={config.label}
+                    aria-required={field.required}
+                    aria-invalid={Boolean(error)}
+                    className={[
+                      "h-10 w-full min-w-0 rounded-lg border bg-white px-3 text-sm text-brand-text outline-none",
+                      error ? "border-red-400" : editable ? "border-slate-200 focus:border-brand-emerald" : "cursor-default border-slate-200 bg-slate-50",
+                    ].join(" ")}
+                  >
+                    <option value="">Select unit</option>
+                    <option value="kW">kW</option>
+                    <option value="kVA">kVA</option>
+                    <option value="HP">HP</option>
+                  </select>
+                ) : (
+                  <input
+                    id={`bill-field-${field.id}`}
+                    type="text"
+                    value={fieldValue}
+                    placeholder={config.placeholder}
+                    readOnly={!editable}
+                    onChange={(event) => onFieldChange(field.id, event.target.value)}
+                    aria-label={config.label}
+                    aria-required={field.required}
+                    aria-invalid={Boolean(error)}
+                    className={[
+                      "h-10 w-full min-w-0 rounded-lg border bg-white px-3 text-sm text-brand-text outline-none placeholder:text-slate-400",
+                      error ? "border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100" : editable ? "border-slate-200 focus:border-brand-emerald focus:ring-2 focus:ring-brand-emerald/10" : "cursor-default border-slate-200 bg-slate-50",
+                    ].join(" ")}
+                  />
+                )}
 
                 {error ? (
                   <p className="mt-1 text-[11px] text-red-600" role="alert">
@@ -188,16 +211,22 @@ function ExtractedInformationPanel({
           </p>
           <p className="mt-1 text-xs leading-5 text-amber-800">
             Please review the extracted information and correct it if needed
-            before using it for quotation and system recommendation.
-            OCR extraction is not connected in this demo.
+            before it is used for lead qualification or solar calculations.
+            OCR values are not trusted until Sales Staff verifies them.
           </p>
         </div>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        Extraction confidence: <strong className="text-slate-900">{extractionConfidence == null ? "Not available" : `${Math.round(extractionConfidence * 100)}%`}</strong>
+        <span className="ml-1 text-[10px]">Confidence is an OCR processor signal, not a verification result.</span>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
         <button
           type="button"
           onClick={onReupload}
+          disabled={disabled}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-brand-text transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-emerald"
         >
           <RefreshCw size={17} aria-hidden="true" />
@@ -207,6 +236,7 @@ function ExtractedInformationPanel({
         <button
           type="button"
           onClick={onSaveDraft}
+          disabled={disabled}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-brand-text transition hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-emerald"
         >
           <Save size={17} aria-hidden="true" />
@@ -216,10 +246,11 @@ function ExtractedInformationPanel({
         <button
           type="button"
           onClick={onConfirmDetails}
+          disabled={disabled}
           className="inline-flex min-h-11 whitespace-nowrap items-center justify-center gap-1 rounded-xl bg-brand-emerald px-2 py-2.5 text-xs font-semibold text-white transition hover:bg-brand-emerald-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-emerald xl:text-[13px]"
         >
           <CheckCircle2 size={17} aria-hidden="true" />
-          <span>Confirm & Proceed</span>
+          <span>{confirmLabel}</span>
           <ArrowRight size={16} aria-hidden="true" />
         </button>
       </div>

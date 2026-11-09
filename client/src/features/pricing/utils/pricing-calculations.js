@@ -31,47 +31,51 @@ export function formatINRCompact(value) {
   return `₹ ${new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value)}`;
 }
 
-export function calculateAnnualGeneration(
-  capacityKw,
-  unitsPerKwPerYear = GENERATION_UNITS_PER_KW_PER_YEAR
-) {
-  if (
-    !isFiniteNumber(capacityKw) ||
-    capacityKw <= 0 ||
-    !isFiniteNumber(unitsPerKwPerYear) ||
-    unitsPerKwPerYear <= 0
-  ) {
-    return null;
-  }
+export function calculateAnnualGeneration(capacityKw, unitsPerKwPerYear = GENERATION_UNITS_PER_KW_PER_YEAR) {
+  if (!isFiniteNumber(capacityKw) || capacityKw <= 0 || !isFiniteNumber(unitsPerKwPerYear) || unitsPerKwPerYear <= 0) return null;
   return Math.round(capacityKw * unitsPerKwPerYear);
 }
 
 export function calculateSubsidy(capacityKw, rule = DEFAULT_SUBSIDY_RULE) {
   if (!isFiniteNumber(capacityKw) || capacityKw <= 0 || !rule) return null;
+
+  if (Array.isArray(rule.slabs)) {
+    if (!rule.slabs.length) return 0;
+    let previousLimit = 0;
+    let uncappedAmount = 0;
+    for (const slab of rule.slabs) {
+      const upperLimit = Math.min(capacityKw, Number(slab.upToKW));
+      const eligibleCapacity = Math.max(0, upperLimit - previousLimit);
+      if (eligibleCapacity > 0) {
+        uncappedAmount += eligibleCapacity * Number(slab.amountPerKW);
+      }
+      previousLimit = Number(slab.upToKW);
+      if (capacityKw <= previousLimit) break;
+    }
+    return Math.min(uncappedAmount, Number(rule.maximumSubsidy ?? 0));
+  }
+
   const firstTwoKw = Math.min(capacityKw, 2);
   const thirdKw = Math.max(0, Math.min(capacityKw - 2, 1));
-  const rawAmount =
-    firstTwoKw * rule.firstTwoKwPerKw + thirdKw * rule.thirdKw;
+  const rawAmount = firstTwoKw * rule.firstTwoKwPerKw + thirdKw * rule.thirdKw;
   return Math.min(rawAmount, rule.maximumSubsidy);
 }
 
 export function calculateDraftGrossCost(rate) {
   if (!rate) return null;
   const equipment = toPositiveNumber(rate.equipmentCost);
-  const installation = toPositiveNumber(rate.installationCost);
-  if (equipment === null || installation === null) return null;
+  const installation = rate.installationCost === "" || rate.installationCost === null || rate.installationCost === undefined ? null : Number(rate.installationCost);
+  if (equipment === null || !Number.isFinite(installation) || installation < 0) return null;
   return equipment + installation;
 }
 
 export function calculateApprovedGrossCost(rate) {
-  if (!rate || rate.approvalStatus !== "approved") return null;
+  if (!rate || !["active", "approved"].includes(rate.approvalStatus)) return null;
   return calculateDraftGrossCost(rate);
 }
 
 export function calculateNetInstallationCost(grossCost, subsidy, isVerified = false) {
-  if (!isVerified || !isFiniteNumber(grossCost) || !isFiniteNumber(subsidy)) {
-    return null;
-  }
+  if (!isVerified || !isFiniteNumber(grossCost) || !isFiniteNumber(subsidy)) return null;
   return Math.max(0, grossCost - subsidy);
 }
 
@@ -79,16 +83,9 @@ export function validateEffectiveDates(effectiveFrom, effectiveTo = "") {
   const errors = {};
   const fromDate = parseISODate(effectiveFrom);
   const toDate = effectiveTo ? parseISODate(effectiveTo) : null;
-
-  if (!effectiveFrom || !fromDate) {
-    errors.effectiveFrom = "Enter a valid effective-from date.";
-  }
-  if (effectiveTo && !toDate) {
-    errors.effectiveTo = "Enter a valid effective-to date.";
-  }
-  if (fromDate && toDate && toDate < fromDate) {
-    errors.effectiveTo = "Effective-to date cannot be earlier than effective-from date.";
-  }
+  if (!effectiveFrom || !fromDate) errors.effectiveFrom = "Enter a valid effective-from date.";
+  if (effectiveTo && !toDate) errors.effectiveTo = "Enter a valid effective-to date.";
+  if (fromDate && toDate && toDate <= fromDate) errors.effectiveTo = "Effective-to date must be later than effective-from date.";
   return errors;
 }
 
@@ -106,51 +103,24 @@ export function getNextEffectiveDate(referenceDate) {
   return parsed.toISOString().slice(0, 10);
 }
 
-export function getVersionStatus(version, referenceDate = "2026-11-14") {
+export function getVersionStatus(version, referenceDate = new Date().toISOString().slice(0, 10)) {
   if (!version) return "unknown";
-  if (version.status === "draft") return "draft";
-  if (version.status === "revoked") return "revoked";
-  const from = parseISODate(version.effectiveFrom);
-  const to = version.effectiveTo ? parseISODate(version.effectiveTo) : null;
+  if (version.status === "draft" || version.status === "inactive") return version.status;
+  const from = parseISODate(String(version.effectiveFrom ?? "").slice(0, 10));
+  const to = version.effectiveTo ? parseISODate(String(version.effectiveTo).slice(0, 10)) : null;
   const reference = parseISODate(referenceDate);
   if (!from || !reference) return version.status ?? "unknown";
   if (reference < from) return "scheduled";
   if (to && reference > to) return "expired";
-  return "active";
+  return version.status ?? "unknown";
 }
 
 export function sortVersionsNewestFirst(versions = []) {
   return [...versions].sort((a, b) => {
-    const aDate = parseISODate(a.effectiveFrom)?.getTime() ?? 0;
-    const bDate = parseISODate(b.effectiveFrom)?.getTime() ?? 0;
-    return bDate - aDate;
+    const aDate = parseISODate(String(a.effectiveFrom ?? "").slice(0, 10))?.getTime() ?? 0;
+    const bDate = parseISODate(String(b.effectiveFrom ?? "").slice(0, 10))?.getTime() ?? 0;
+    return bDate - aDate || Number(b.version ?? 0) - Number(a.version ?? 0);
   });
-}
-
-export function validateNewVersion({ version, effectiveFrom, effectiveTo }, existingVersions = []) {
-  const errors = { ...validateEffectiveDates(effectiveFrom, effectiveTo) };
-  const versionPattern = /^v\d+\.\d+$/;
-  if (!versionPattern.test(String(version ?? "").trim())) {
-    errors.version = "Use a version label such as v2.1.";
-  } else if (existingVersions.some((item) => item.version === version.trim())) {
-    errors.version = "This version label already exists.";
-  }
-  return errors;
-}
-
-export function createDraftVersion(input, existingVersions = []) {
-  const errors = validateNewVersion(input, existingVersions);
-  if (Object.keys(errors).length > 0) return { version: null, errors };
-  const version = {
-    id: `draft-${input.version.trim().replace(/[^a-zA-Z0-9.-]/g, "")}`,
-    version: input.version.trim(),
-    effectiveFrom: input.effectiveFrom,
-    effectiveTo: input.effectiveTo || null,
-    status: "draft",
-    note: String(input.note ?? "").trim(),
-    createdInSession: true,
-  };
-  return { version, errors: {} };
 }
 
 export function getRateForCapacity(rates = [], capacityKw) {
@@ -159,14 +129,14 @@ export function getRateForCapacity(rates = [], capacityKw) {
 
 export function getRateDisplayState(rate) {
   if (!rate) return "awaiting";
-  if (rate.approvalStatus === "approved") return "approved";
+  if (["active", "approved"].includes(rate.approvalStatus)) return "approved";
   if (calculateDraftGrossCost(rate) !== null) return "draft";
   return "awaiting";
 }
 
 export function getNextVersionLabel(versions = []) {
   const majorMinor = versions
-    .map((item) => /^v(\d+)\.(\d+)$/.exec(item.version ?? ""))
+    .map((item) => /^v(\\d+)\\.(\\d+)$/.exec(item.version ?? ""))
     .filter(Boolean)
     .map((match) => ({ major: Number(match[1]), minor: Number(match[2]) }))
     .sort((a, b) => b.major - a.major || b.minor - a.minor)[0];

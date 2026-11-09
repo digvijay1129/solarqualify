@@ -28,7 +28,8 @@ function BillPreviewPanel({ file = null, embedded = false }) {
   const isImage =
     file?.type === "image/jpeg" ||
     file?.type === "image/png" ||
-    /\.(jpe?g|png)$/i.test(file?.name ?? "");
+    file?.type === "image/webp" ||
+    /\.(jpe?g|png|webp)$/i.test(file?.name ?? "");
 
   return (
     <section

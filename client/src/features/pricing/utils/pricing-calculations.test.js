@@ -75,6 +75,28 @@ describe("pricing and subsidy calculations", () => {
     });
   });
 
+  it("calculates subsidies from ordered backend slab rules", () => {
+    const rule = {
+      slabs: [
+        { upToKW: 2, amountPerKW: 30000 },
+        { upToKW: 3, amountPerKW: 18000 },
+      ],
+      maximumSubsidy: 78000,
+    };
+    expect(calculateSubsidy(1, rule)).toBe(30000);
+    expect(calculateSubsidy(2, rule)).toBe(60000);
+    expect(calculateSubsidy(3, rule)).toBe(78000);
+    expect(calculateSubsidy(5, rule)).toBe(78000);
+  });
+
+  it("uses a backend maximum subsidy cap for the slab calculation", () => {
+    const rule = {
+      slabs: [{ upToKW: 5, amountPerKW: 20000 }],
+      maximumSubsidy: 65000,
+    };
+    expect(calculateSubsidy(5, rule)).toBe(65000);
+  });
+
   it("calculates a draft total when both draft cost parts exist", () => {
     expect(calculateDraftGrossCost({ equipmentCost: 100000, installationCost: 25000 })).toBe(125000);
   });
@@ -117,6 +139,22 @@ describe("pricing and subsidy calculations", () => {
 
   it("accepts a valid effective date range", () => {
     expect(validateEffectiveDates("2026-11-01", "2026-11-30")).toEqual({});
+  });
+
+  it("rejects an effective-to date equal to the effective-from date", () => {
+    expect(validateEffectiveDates("2026-11-01", "2026-11-01").effectiveTo).toBeTruthy();
+  });
+
+  it("recognizes an inactive backend rule version", () => {
+    expect(getVersionStatus({ status: "inactive", effectiveFrom: "2026-11-01" }, "2026-11-14")).toBe("inactive");
+  });
+
+  it("supports backend ISO timestamps in rule dates", () => {
+    expect(getVersionStatus({
+      status: "active",
+      effectiveFrom: "2026-07-01T00:00:00.000Z",
+      effectiveTo: "2026-10-31T00:00:00.000Z",
+    }, "2026-11-14")).toBe("expired");
   });
 
   it("derives an expired version status from the reference date", () => {
