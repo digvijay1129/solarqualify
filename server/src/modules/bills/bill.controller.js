@@ -1,9 +1,19 @@
+
 import { uploadBillDocument } from './bill.service.js';
 import {
   getBillDocumentMetadata,
   downloadBillDocument,
 } from './bill-read.service.js';
 import { deleteBillDocument } from './bill-deletion.service.js';
+
+import {
+  analyzeBillDocument,
+} from '../bill-analysis/bill-analysis.service.js';
+
+import {
+  getBillAnalysisForReview,
+  verifyBillAnalysis,
+} from '../bill-analysis/bill-verification.service.js';
 
 function encodeRFC5987Value(value) {
   return encodeURIComponent(value).replace(
@@ -85,5 +95,49 @@ export async function deleteBillDocumentController(req, res) {
     success: true,
     message: 'Bill document deleted successfully.',
     data: { bill: result },
+  });
+}
+
+export async function analyzeBillDocumentController(req, res) {
+  const analysis = await analyzeBillDocument(
+    req.user,
+    req.params.leadId
+  );
+
+  return res.status(200).json({
+    success: true,
+    message:
+      'Bill analysis completed. Manual verification is required.',
+    data: { analysis },
+  });
+}
+
+export async function getBillAnalysisForReviewController(req, res) {
+  const analysis = await getBillAnalysisForReview(
+    req.user,
+    req.params.leadId
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: 'Bill analysis retrieved for manual review.',
+    data: { analysis },
+  });
+}
+
+export async function verifyBillAnalysisController(req, res) {
+  const analysis = await verifyBillAnalysis(
+    req.user,
+    req.params.leadId,
+    req.body
+  );
+
+  return res.status(200).json({
+    success: true,
+    message:
+      analysis.verificationStatus === 'verified'
+        ? 'Bill verified successfully.'
+        : 'Bill rejected successfully.',
+    data: { analysis },
   });
 }

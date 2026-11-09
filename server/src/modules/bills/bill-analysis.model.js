@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 
 const billAnalysisSchema = new mongoose.Schema(
@@ -61,7 +62,12 @@ const billAnalysisSchema = new mongoose.Schema(
 
     documentType: {
       type: String,
-      enum: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+      enum: [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/pdf',
+      ],
       required: true,
     },
 
@@ -69,6 +75,47 @@ const billAnalysisSchema = new mongoose.Schema(
       type: String,
       default: '',
       select: false,
+    },
+
+    ocrStatus: {
+      type: String,
+      enum: [
+        'not_started',
+        'processing',
+        'completed',
+        'failed',
+      ],
+      default: 'not_started',
+      index: true,
+    },
+
+    ocrAttempts: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    ocrStartedAt: {
+      type: Date,
+      default: null,
+    },
+
+    ocrCompletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    ocrLockId: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    ocrErrorCode: {
+      type: String,
+      trim: true,
+      maxlength: 80,
+      default: null,
     },
 
     consumerNumber: {
@@ -89,6 +136,12 @@ const billAnalysisSchema = new mongoose.Schema(
       default: null,
     },
 
+    sanctionedLoadUnit: {
+      type: String,
+      enum: ['kW', 'kVA', 'HP'],
+      default: null,
+    },
+
     monthlyUnits: {
       type: Number,
       min: 0,
@@ -104,14 +157,31 @@ const billAnalysisSchema = new mongoose.Schema(
 
     verificationStatus: {
       type: String,
-      enum: ['pending', 'needs_review', 'verified', 'rejected'],
+      enum: [
+        'pending',
+        'needs_review',
+        'verified',
+        'rejected',
+      ],
       default: 'pending',
       index: true,
     },
 
+    // Reason or notes entered by Sales Staff during review.
+    reviewNotes: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+    },
+
     deletionStatus: {
       type: String,
-      enum: ['active', 'deleting', 'storage_deleted'],
+      enum: [
+        'active',
+        'deleting',
+        'storage_deleted',
+      ],
       default: 'active',
       index: true,
     },
@@ -132,6 +202,8 @@ const billAnalysisSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Contains only fields manually corrected by Sales Staff.
+    // Each correction stores its original and corrected value.
     corrections: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
@@ -154,10 +226,29 @@ const billAnalysisSchema = new mongoose.Schema(
   }
 );
 
-billAnalysisSchema.index({ leadId: 1, createdAt: -1 });
-billAnalysisSchema.index({ storageFileId: 1 }, { unique: true });
-billAnalysisSchema.index({ leadId: 1, deletionStatus: 1 });
+billAnalysisSchema.index({
+  leadId: 1,
+  createdAt: -1,
+});
 
-const BillAnalysis = mongoose.model('BillAnalysis', billAnalysisSchema);
+billAnalysisSchema.index(
+  { storageFileId: 1 },
+  { unique: true }
+);
+
+billAnalysisSchema.index({
+  leadId: 1,
+  deletionStatus: 1,
+});
+
+billAnalysisSchema.index({
+  leadId: 1,
+  ocrStatus: 1,
+});
+
+const BillAnalysis = mongoose.model(
+  'BillAnalysis',
+  billAnalysisSchema
+);
 
 export default BillAnalysis;

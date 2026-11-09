@@ -1,5 +1,11 @@
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 vi.mock('../src/modules/audit-logs/audit-log.model.js', () => ({
   default: {
@@ -8,6 +14,7 @@ vi.mock('../src/modules/audit-logs/audit-log.model.js', () => ({
 }));
 
 import AuditLog from '../src/modules/audit-logs/audit-log.model.js';
+
 import {
   recordBillAuditEvent,
 } from '../src/modules/bills/bill-audit.service.js';
@@ -19,7 +26,10 @@ const BILL_ID = '507f1f77bcf86cd799439013';
 describe('Bill Audit Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    AuditLog.create.mockResolvedValue({ _id: BILL_ID });
+
+    AuditLog.create.mockResolvedValue({
+      _id: BILL_ID,
+    });
   });
 
   it('should create an upload audit event', async () => {
@@ -62,6 +72,56 @@ describe('Bill Audit Service', () => {
     );
   });
 
+  it.each([
+    'BILL_OCR_REQUESTED',
+    'BILL_OCR_COMPLETED',
+    'BILL_OCR_FAILED',
+  ])('should accept the %s OCR audit event', async (action) => {
+    await recordBillAuditEvent({
+      actorId: ACTOR_ID,
+      action,
+      billId: BILL_ID,
+      leadId: LEAD_ID,
+      documentType: 'application/pdf',
+      documentSize: 2048,
+    });
+
+    expect(AuditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorId: ACTOR_ID,
+        action,
+        resourceId: BILL_ID,
+      })
+    );
+  });
+
+  it.each([
+    'BILL_VERIFICATION_VIEWED',
+    'BILL_VERIFIED',
+    'BILL_REJECTED',
+  ])('should accept the %s verification audit event', async (action) => {
+    await recordBillAuditEvent({
+      actorId: ACTOR_ID,
+      action,
+      billId: BILL_ID,
+      leadId: LEAD_ID,
+      documentType: 'application/pdf',
+      documentSize: 1024,
+    });
+
+    expect(AuditLog.create).toHaveBeenCalledWith({
+      actorId: ACTOR_ID,
+      action,
+      resourceType: 'BillAnalysis',
+      resourceId: BILL_ID,
+      metadata: {
+        leadId: LEAD_ID,
+        documentType: 'application/pdf',
+        documentSize: 1024,
+      },
+    });
+  });
+
   it('should reject invalid actor IDs', async () => {
     await expect(
       recordBillAuditEvent({
@@ -69,7 +129,9 @@ describe('Bill Audit Service', () => {
         action: 'BILL_UPLOADED',
         leadId: LEAD_ID,
       })
-    ).rejects.toThrow('A valid audit actor ID is required.');
+    ).rejects.toThrow(
+      'A valid audit actor ID is required.'
+    );
 
     expect(AuditLog.create).not.toHaveBeenCalled();
   });
@@ -81,7 +143,9 @@ describe('Bill Audit Service', () => {
         action: 'UNKNOWN_ACTION',
         leadId: LEAD_ID,
       })
-    ).rejects.toThrow('Unsupported bill audit action.');
+    ).rejects.toThrow(
+      'Unsupported bill audit action.'
+    );
 
     expect(AuditLog.create).not.toHaveBeenCalled();
   });
@@ -93,7 +157,9 @@ describe('Bill Audit Service', () => {
         action: 'BILL_UPLOADED',
         leadId: 'invalid',
       })
-    ).rejects.toThrow('A valid audit lead ID is required.');
+    ).rejects.toThrow(
+      'A valid audit lead ID is required.'
+    );
   });
 
   it('should reject invalid bill IDs', async () => {
@@ -104,7 +170,9 @@ describe('Bill Audit Service', () => {
         billId: 'invalid',
         leadId: LEAD_ID,
       })
-    ).rejects.toThrow('A valid audit bill ID is required.');
+    ).rejects.toThrow(
+      'A valid audit bill ID is required.'
+    );
   });
 
   it('should reject unsupported document types', async () => {
@@ -115,7 +183,9 @@ describe('Bill Audit Service', () => {
         leadId: LEAD_ID,
         documentType: 'application/zip',
       })
-    ).rejects.toThrow('Invalid audit document type.');
+    ).rejects.toThrow(
+      'Invalid audit document type.'
+    );
   });
 
   it('should reject invalid document sizes', async () => {
@@ -126,7 +196,9 @@ describe('Bill Audit Service', () => {
         leadId: LEAD_ID,
         documentSize: -1,
       })
-    ).rejects.toThrow('Invalid audit document size.');
+    ).rejects.toThrow(
+      'Invalid audit document size.'
+    );
   });
 
   it('should not save unexpected sensitive properties', async () => {

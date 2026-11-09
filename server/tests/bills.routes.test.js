@@ -1,4 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
 import jwt from 'jsonwebtoken';
 import request from 'supertest';
 
@@ -7,6 +14,7 @@ const billServices = vi.hoisted(() => ({
   getBillDocumentMetadata: vi.fn(),
   downloadBillDocument: vi.fn(),
   deleteBillDocument: vi.fn(),
+  analyzeBillDocument: vi.fn(),
 }));
 
 vi.mock('../src/modules/bills/bill.service.js', () => ({
@@ -14,13 +22,22 @@ vi.mock('../src/modules/bills/bill.service.js', () => ({
 }));
 
 vi.mock('../src/modules/bills/bill-read.service.js', () => ({
-  getBillDocumentMetadata: billServices.getBillDocumentMetadata,
-  downloadBillDocument: billServices.downloadBillDocument,
+  getBillDocumentMetadata:
+    billServices.getBillDocumentMetadata,
+  downloadBillDocument:
+    billServices.downloadBillDocument,
 }));
 
 vi.mock('../src/modules/bills/bill-deletion.service.js', () => ({
   deleteBillDocument: billServices.deleteBillDocument,
 }));
+
+vi.mock(
+  '../src/modules/bill-analysis/bill-analysis.service.js',
+  () => ({
+    analyzeBillDocument: billServices.analyzeBillDocument,
+  })
+);
 
 vi.mock('../src/modules/users/user.model.js', () => ({
   default: {
@@ -55,6 +72,23 @@ const deletionResult = {
   billId: billResult.id,
   leadId: LEAD_ID,
   deleted: true,
+};
+
+const analysisResult = {
+  billId: billResult.id,
+  leadId: LEAD_ID,
+  ocrStatus: 'completed',
+  verificationStatus: 'needs_review',
+  extractionMethod: 'embedded_text',
+  extractionConfidence: null,
+  fields: {
+    consumerNumber: 'ABC123456',
+    tariff: 'LT-I Domestic',
+    sanctionedLoad: 3,
+    sanctionedLoadUnit: 'kW',
+    monthlyUnits: 340,
+  },
+  missingFields: [],
 };
 
 function createToken(userId, role = 'homeowner') {
@@ -113,6 +147,7 @@ describe('Bills HTTP API', () => {
 
     it('should allow an authenticated homeowner to upload a valid PDF', async () => {
       mockAuthenticatedUser(HOMEOWNER_ID, 'homeowner');
+
       billServices.uploadBillDocument.mockResolvedValue(
         billResult
       );
@@ -221,9 +256,11 @@ describe('Bills HTTP API', () => {
       expect(response.body.data.bill).not.toHaveProperty(
         'storageFileId'
       );
+
       expect(response.body.data.bill).not.toHaveProperty(
         'storagePath'
       );
+
       expect(response.body.data.bill).not.toHaveProperty(
         'encryption'
       );
@@ -293,7 +330,6 @@ describe('Bills HTTP API', () => {
     });
 
     it('should reject users whose database role is not permitted', async () => {
-      // The database role is authoritative, not the JWT role claim.
       mockAuthenticatedUser(HOMEOWNER_ID, 'installer');
 
       await request(app)
@@ -344,11 +380,7 @@ describe('Bills HTTP API', () => {
         success: true,
         message: 'Bill document deleted successfully.',
         data: {
-          bill: {
-            billId: billResult.id,
-            leadId: LEAD_ID,
-            deleted: true,
-          },
+          bill: deletionResult,
         },
       });
     });
@@ -362,7 +394,6 @@ describe('Bills HTTP API', () => {
 
       const response = await request(app)
         .delete(`/api/v1/leads/${LEAD_ID}/bill`)
-        // Database role is authoritative over the JWT role claim.
         .set(authenticate(STAFF_ID, 'homeowner'))
         .expect(200);
 
@@ -400,6 +431,7 @@ describe('Bills HTTP API', () => {
       const conflictError = new Error(
         'Bill document is already being deleted.'
       );
+
       conflictError.statusCode = 409;
 
       billServices.deleteBillDocument.mockRejectedValue(
@@ -413,6 +445,136 @@ describe('Bills HTTP API', () => {
 
       expect(
         billServices.deleteBillDocument
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: HOMEOWNER_ID,
+          role: 'homeowner',
+        }),
+        LEAD_ID
+      );
+    });
+  });
+
+  describe('POST /api/v1/leads/:leadId/bill/analyze', () => {
+    it('should reject OCR analysis without authentication', async () => {
+      await request(app)
+        .post(`/api/v1/leads/${LEAD_ID}/bill/analyze`)
+        .expect(401);
+
+      expect(
+        billServices.analyzeBillDocument
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should allow an authorized homeowner to request bill analysis', async () => {
+      mockAuthenticatedUser(HOMEOWNER_ID, 'homeowner');
+
+      billServices.analyzeBillDocument.mockResolvedValue(
+        analysisResult
+      );
+
+      const response = await request(app)
+        .post(`/api/v1/leads/${LEAD_ID}/bill/analyze`)
+        .set(authenticate(HOMEOWNER_ID))
+        .expect(200);
+
+      expect(
+        billServices.analyzeBillDocument
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: HOMEOWNER_ID,
+          role: 'homeowner',
+        }),
+        LEAD_ID
+      );
+
+      expect(response.body).toMatchObject({
+        success: true,
+        message:
+          'Bill analysis completed. Manual verification is required.',
+        data: {
+          analysis: analysisResult,
+        },
+      });
+
+      expect(response.body.data.analysis).not.toHaveProperty(
+        'extractedText'
+      );
+
+      expect(response.body.data.analysis).not.toHaveProperty(
+        'storagePath'
+      );
+
+      expect(response.body.data.analysis).not.toHaveProperty(
+        'storageFileId'
+      );
+
+      expect(response.body.data.analysis).not.toHaveProperty(
+        'encryption'
+      );
+    });
+
+    it('should allow an authorized Sales Staff member to request analysis', async () => {
+      mockAuthenticatedUser(STAFF_ID, 'salesStaff');
+
+      billServices.analyzeBillDocument.mockResolvedValue(
+        analysisResult
+      );
+
+      const response = await request(app)
+        .post(`/api/v1/leads/${LEAD_ID}/bill/analyze`)
+        .set(authenticate(STAFF_ID, 'homeowner'))
+        .expect(200);
+
+      expect(
+        billServices.analyzeBillDocument
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: STAFF_ID,
+          role: 'salesStaff',
+        }),
+        LEAD_ID
+      );
+
+      expect(response.body.data.analysis).toMatchObject({
+        ocrStatus: 'completed',
+        verificationStatus: 'needs_review',
+      });
+    });
+
+    it('should reject users whose database role is not permitted', async () => {
+      mockAuthenticatedUser(HOMEOWNER_ID, 'installer');
+
+      await request(app)
+        .post(`/api/v1/leads/${LEAD_ID}/bill/analyze`)
+        .set(authenticate(HOMEOWNER_ID, 'homeowner'))
+        .expect(403);
+
+      expect(
+        billServices.analyzeBillDocument
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should pass OCR processing conflicts to the error handler', async () => {
+      mockAuthenticatedUser(HOMEOWNER_ID, 'homeowner');
+
+      const conflictError = new Error(
+        'Bill OCR is already being processed.'
+      );
+
+      conflictError.statusCode = 409;
+
+      billServices.analyzeBillDocument.mockRejectedValue(
+        conflictError
+      );
+
+      await request(app)
+        .post(`/api/v1/leads/${LEAD_ID}/bill/analyze`)
+        .set(authenticate(HOMEOWNER_ID))
+        .expect(409);
+
+      expect(
+        billServices.analyzeBillDocument
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           id: HOMEOWNER_ID,

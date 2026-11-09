@@ -9,6 +9,12 @@ const BILL_AUDIT_ACTIONS = new Set([
   'BILL_DELETE_REQUESTED',
   'BILL_DELETED',
   'BILL_DELETE_FAILED',
+  'BILL_OCR_REQUESTED',
+  'BILL_OCR_COMPLETED',
+  'BILL_OCR_FAILED',
+  'BILL_VERIFICATION_VIEWED',
+  'BILL_VERIFIED',
+  'BILL_REJECTED',
 ]);
 
 const DOCUMENT_TYPES = new Set([
@@ -27,19 +33,30 @@ export async function recordBillAuditEvent({
   documentSize,
 }) {
   if (!mongoose.isValidObjectId(actorId)) {
-    throw new TypeError('A valid audit actor ID is required.');
+    throw new TypeError(
+      'A valid audit actor ID is required.'
+    );
   }
 
   if (!BILL_AUDIT_ACTIONS.has(action)) {
-    throw new TypeError('Unsupported bill audit action.');
+    throw new TypeError(
+      'Unsupported bill audit action.'
+    );
   }
 
   if (!mongoose.isValidObjectId(leadId)) {
-    throw new TypeError('A valid audit lead ID is required.');
+    throw new TypeError(
+      'A valid audit lead ID is required.'
+    );
   }
 
-  if (billId !== null && !mongoose.isValidObjectId(billId)) {
-    throw new TypeError('A valid audit bill ID is required.');
+  if (
+    billId !== null &&
+    !mongoose.isValidObjectId(billId)
+  ) {
+    throw new TypeError(
+      'A valid audit bill ID is required.'
+    );
   }
 
   const metadata = {
@@ -48,15 +65,22 @@ export async function recordBillAuditEvent({
 
   if (documentType !== undefined) {
     if (!DOCUMENT_TYPES.has(documentType)) {
-      throw new TypeError('Invalid audit document type.');
+      throw new TypeError(
+        'Invalid audit document type.'
+      );
     }
 
     metadata.documentType = documentType;
   }
 
   if (documentSize !== undefined) {
-    if (!Number.isSafeInteger(documentSize) || documentSize < 1) {
-      throw new TypeError('Invalid audit document size.');
+    if (
+      !Number.isSafeInteger(documentSize) ||
+      documentSize < 1
+    ) {
+      throw new TypeError(
+        'Invalid audit document size.'
+      );
     }
 
     metadata.documentSize = documentSize;
