@@ -6,8 +6,6 @@
 
 A full-stack platform that helps solar installers turn homeowner enquiries into qualified opportunities, generate transparent solar proposals, and keep customers informed throughout an installation.
 
-[![Backend CI](https://github.com/digvijay1129/solarqualify/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/digvijay1129/solarqualify/actions)
-[![Frontend CI](https://github.com/digvijay1129/solarqualify/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/digvijay1129/solarqualify/actions)
 
 </div>
 
