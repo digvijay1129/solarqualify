@@ -161,14 +161,39 @@ describe('Lead Scoring Service', () => {
     expect(result.dataGaps.length).toBeGreaterThan(0);
   });
 
-  it('classifies scores at the medium threshold correctly', async () => {
+  it('keeps a score below the calibrated medium threshold at low priority', async () => {
     const current = lead({ ownership: 'tenant', propertyType: 'commercial', monthlyElectricityBill: 1500, monthlyUnits: 0, billAnalysisId: null });
     mockLeadQuery(current);
     mockUpdatedLead({ ...current, leadScore: 40, priority: 'medium' });
 
     const result = await qualifyLead(staff, LEAD_ID);
     expect(result.leadScore).toBe(40);
-    expect(result.priority).toBe('medium');
+    expect(result.priority).toBe('low');
+  });
+
+  it('matches all three lead-priority anchors in the client sample data', async () => {
+    const samples = [
+      { ownership: 'owner', monthlyElectricityBill: 3200, monthlyUnits: 340, expectedScore: 68, expectedPriority: 'high' },
+      { ownership: 'tenant', monthlyElectricityBill: 1900, monthlyUnits: 210, expectedScore: 51, expectedPriority: 'low' },
+      { ownership: 'owner', monthlyElectricityBill: 650, monthlyUnits: 85, expectedScore: 51, expectedPriority: 'low' },
+    ];
+
+    for (const sample of samples) {
+      const current = lead({
+        ownership: sample.ownership,
+        propertyType: 'residential',
+        monthlyElectricityBill: sample.monthlyElectricityBill,
+        monthlyUnits: sample.monthlyUnits,
+        billAnalysisId: null,
+      });
+      mockLeadQuery(current);
+      mockUpdatedLead({ ...current, leadScore: sample.expectedScore, priority: sample.expectedPriority });
+
+      const result = await qualifyLead(staff, LEAD_ID);
+
+      expect(result.leadScore).toBe(sample.expectedScore);
+      expect(result.priority).toBe(sample.expectedPriority);
+    }
   });
 
   it('rejects malformed lead IDs', async () => {
