@@ -64,6 +64,7 @@ const quotationSchema = new mongoose.Schema({
   calculationInputs: { type: mongoose.Schema.Types.Mixed, default: {} },
   pdfDocumentKey: { type: String, trim: true, default: null },
   quotationStatus: { type: String, enum: ['draft','generated','sent','accepted','rejected','expired'], default: 'draft', index: true },
+  customerDecisionAt: { type: Date, default: null },
 }, { timestamps: true, versionKey: false });
 
 quotationSchema.index({ leadId: 1, createdAt: -1 });
