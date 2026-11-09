@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { authenticate } from '../../middleware/authenticate.js';
 import { authorize } from '../../middleware/authorize.js';
-import { getQuotationController, downloadQuotationPdfController } from './quotation.controller.js';
+import { getQuotationController, downloadQuotationPdfController, decideQuotationController } from './quotation.controller.js';
 import { rateLimit } from 'express-rate-limit';
 import { createProjectFromQuotationController } from '../projects/project.controller.js';
 
@@ -22,6 +22,7 @@ router.post(
   authorize('salesStaff'),
   createProjectFromQuotationController
 );
+router.patch('/:quotationId/decision', authorize('homeowner'), decideQuotationController);
 router.get('/:quotationId/pdf', downloadQuotationPdfController);
 router.get('/:quotationId', getQuotationController);
 export default router;
