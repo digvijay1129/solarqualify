@@ -7,6 +7,7 @@ import quotationRoutes from '../modules/quotations/quotation.routes.js';
 import projectRoutes from '../modules/projects/project.routes.js';
 import publicProjectStatusRoutes from '../modules/projects/public-project-status.routes.js';
 import auditLogRoutes from '../modules/audit-logs/audit-log.routes.js';
+import analyticsRoutes from '../modules/analytics/analytics.routes.js';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/quotations', quotationRoutes);
 router.use('/projects', projectRoutes);
 router.use('/public/project-status', publicProjectStatusRoutes);
 router.use('/audit-logs', auditLogRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;

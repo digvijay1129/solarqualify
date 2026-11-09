@@ -273,7 +273,26 @@ Important staff actions will be recorded.
 
 Passwords, access tokens and complete electricity bill contents must never be stored in audit logs.
 
-## 13. Standard Response Format
+## 13. Dashboard Analytics and Reporting APIs
+
+| Method | Endpoint | Description | Access |
+|---|---|---|---|
+| GET | /analytics/dashboard | Retrieve role-scoped dashboard analytics | Homeowner / Sales Staff |
+
+Optional query parameters:
+
+- `startDate`: inclusive UTC date in `YYYY-MM-DD` format.
+- `endDate`: inclusive UTC date in `YYYY-MM-DD` format.
+
+The default range is the current month and the previous eleven calendar months. A maximum of 24 calendar months is supported.
+
+Analytics include lead totals, current qualified and converted counts, priority distribution, monthly lead creation trends, quotation generation and acceptance statistics, quotation value estimates, current project stage/status distributions and financial reporting.
+
+Homeowners see their own data. Sales Staff see assigned and unassigned lead records, quotations linked to those leads, and projects assigned to them.
+
+Quotation values are estimates. Realized revenue is reported as unavailable until payment or invoice records are implemented. Lead and project stage/status figures describe current states for records created in the selected period, not historical transitions.
+
+## 14. Standard Response Format
 
 Successful response example:
 
@@ -298,7 +317,7 @@ Error response example:
   ]
 }
 
-## 14. HTTP Status Codes
+## 15. HTTP Status Codes
 
 - 200: Successful request.
 - 201: Resource created.
@@ -314,7 +333,7 @@ Error response example:
 - 429: Too many requests.
 - 500: Internal server error.
 
-## 15. API Security
+## 16. API Security
 
 - Authenticate protected endpoints.
 - Enforce authorization on the backend.
@@ -327,7 +346,7 @@ Error response example:
 - Keep environment secrets outside the repository.
 - Avoid returning unnecessary sensitive information.
 
-## 16. API Integration Strategy
+## 17. API Integration Strategy
 
 During frontend development, feature services will use dedicated mock repositories.
 
@@ -340,7 +359,7 @@ After backend development:
 5. Validate actual API responses in the UI.
 6. Remove demo mock data from the production application.
 
-## 17. API Design Status
+## 18. API Design Status
 
 This document describes the planned backend API contracts.
 

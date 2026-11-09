@@ -95,7 +95,17 @@ Development is organized into phases:
 
 ## Project Status
 
-Phase 1: Architecture and project structure setup.
+Backend development through Phase 4.14 is implemented in the repository:
+
+- Secure electricity bill upload, OCR and manual verification.
+- Explainable lead qualification and versioned business rules.
+- Deterministic solar calculations and quotation PDF generation.
+- Project lifecycle, public status links, simulated notifications and audit logs.
+- Role-scoped MongoDB dashboard analytics and reporting APIs.
+
+Frontend API integration, end-to-end verification, production deployment and final release activities remain in the development roadmap.
+
+See the phase documentation in `docs/` for implemented API contracts, assumptions and limitations.
 
 ## Assumptions and Limitations
 
