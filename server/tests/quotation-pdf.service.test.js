@@ -59,7 +59,7 @@ describe('Quotation PDF Generation', () => {
   it('sanitizes attachment filenames', () => {
     expect(getQuotationPdfFileName(quotation)).toBe('SolarQualify-SQ-9439016.pdf');
     expect(getQuotationPdfFileName({ quotationNumber: 'SQ-123/evil\r\n.pdf' }))
-      .toBe('SolarQualify-SQ-123rnpdf.pdf');
+      .toBe('SolarQualify-SQ-123evilpdf.pdf');
   });
 
   it('rejects a missing quotation object', () => {
