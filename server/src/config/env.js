@@ -33,6 +33,27 @@ if (jwtSecret.length < 32) {
 
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN?.trim() || '1h';
 
+const maxUploadMb = Number(process.env.MAX_UPLOAD_MB ?? 5);
+
+if (!Number.isFinite(maxUploadMb) || maxUploadMb <= 0 || maxUploadMb > 20) {
+  throw new Error('MAX_UPLOAD_MB must be greater than 0 and no more than 20.');
+}
+
+const documentEncryptionKey =
+  process.env.DOCUMENT_ENCRYPTION_KEY?.trim() ?? '';
+
+const encryptionKeyBytes = Buffer.from(documentEncryptionKey, 'base64');
+
+if (
+  !documentEncryptionKey ||
+  encryptionKeyBytes.length !== 32 ||
+  encryptionKeyBytes.toString('base64') !== documentEncryptionKey
+) {
+  throw new Error(
+    'DOCUMENT_ENCRYPTION_KEY must be a valid base64-encoded 32-byte key.'
+  );
+}
+
 export const env = Object.freeze({
   NODE_ENV: nodeEnv,
   PORT: parsedPort,
@@ -42,4 +63,9 @@ export const env = Object.freeze({
   MONGODB_URI: process.env.MONGODB_URI?.trim() ?? '',
   JWT_SECRET: jwtSecret,
   JWT_EXPIRES_IN: jwtExpiresIn,
+  MAX_UPLOAD_MB: maxUploadMb,
+  IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY?.trim() ?? '',
+  IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY?.trim() ?? '',
+  IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT?.trim() ?? '',
+  DOCUMENT_ENCRYPTION_KEY: documentEncryptionKey,
 });

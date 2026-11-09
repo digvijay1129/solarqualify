@@ -9,10 +9,54 @@ const billAnalysisSchema = new mongoose.Schema(
       index: true,
     },
 
-    documentKey: {
+    storageProvider: {
+      type: String,
+      enum: ['imagekit'],
+      default: 'imagekit',
+      required: true,
+    },
+
+    storageFileId: {
       type: String,
       required: true,
       trim: true,
+    },
+
+    storagePath: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    originalFileName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 255,
+    },
+
+    documentSize: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+
+    encryption: {
+      algorithm: {
+        type: String,
+        enum: ['aes-256-gcm'],
+        required: true,
+      },
+      iv: {
+        type: String,
+        required: true,
+        select: false,
+      },
+      authTag: {
+        type: String,
+        required: true,
+        select: false,
+      },
     },
 
     documentType: {
@@ -65,6 +109,29 @@ const billAnalysisSchema = new mongoose.Schema(
       index: true,
     },
 
+    deletionStatus: {
+      type: String,
+      enum: ['active', 'deleting', 'storage_deleted'],
+      default: 'active',
+      index: true,
+    },
+
+    deletionStartedAt: {
+      type: Date,
+      default: null,
+    },
+
+    deletionLockId: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    storageDeletedAt: {
+      type: Date,
+      default: null,
+    },
+
     corrections: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
@@ -88,6 +155,8 @@ const billAnalysisSchema = new mongoose.Schema(
 );
 
 billAnalysisSchema.index({ leadId: 1, createdAt: -1 });
+billAnalysisSchema.index({ storageFileId: 1 }, { unique: true });
+billAnalysisSchema.index({ leadId: 1, deletionStatus: 1 });
 
 const BillAnalysis = mongoose.model('BillAnalysis', billAnalysisSchema);
 

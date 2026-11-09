@@ -5,8 +5,17 @@ import BillAnalysis from '../src/modules/bills/bill-analysis.model.js';
 describe('Bill Analysis Model', () => {
   const validBill = () => ({
     leadId: new mongoose.Types.ObjectId(),
-    documentKey: 'private/bills/test-bill.jpg',
+    storageProvider: 'imagekit',
+    storageFileId: 'test-imagekit-file-id',
+    storagePath: '/solarqualify/bills/test-bill.jpg',
+    originalFileName: 'electricity-bill.jpg',
+    documentSize: 1024,
     documentType: 'image/jpeg',
+    encryption: {
+      algorithm: 'aes-256-gcm',
+      iv: Buffer.alloc(12).toString('base64'),
+      authTag: Buffer.alloc(16).toString('base64'),
+    },
   });
 
   it('should create a valid bill analysis with default values', async () => {
@@ -88,5 +97,27 @@ describe('Bill Analysis Model', () => {
 
   it('should exclude extracted OCR text from query results by default', () => {
     expect(BillAnalysis.schema.path('extractedText').options.select).toBe(false);
+  });
+
+  it('should reject a missing ImageKit file ID', async () => {
+    const data = validBill();
+    delete data.storageFileId;
+
+    const bill = new BillAnalysis(data);
+
+    await expect(bill.validate()).rejects.toHaveProperty(
+      'errors.storageFileId'
+    );
+  });
+
+  it('should reject a missing encryption authentication tag', async () => {
+    const data = validBill();
+    delete data.encryption.authTag;
+
+    const bill = new BillAnalysis(data);
+
+    const error = await bill.validate().catch((validationError) => validationError);
+
+    expect(error.errors['encryption.authTag']).toBeDefined();
   });
 });
