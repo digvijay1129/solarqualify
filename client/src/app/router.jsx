@@ -24,8 +24,15 @@ import BillAnalysisPage from "../features/bill-analysis/pages/BillAnalysisPage.j
 import QuotationBuilderPage from "../features/quotations/pages/QuotationBuilderPage.jsx";
 import ProjectTrackerPage from "../features/projects/pages/ProjectTrackerPage.jsx";
 import PricingSubsidyPage from "../features/pricing/pages/PricingSubsidyPage.jsx";
+import PublicProjectStatusPage from "../features/projects/pages/PublicProjectStatusPage.jsx";
 
 const router = createBrowserRouter([
+  // Token-protected customer tracking route. The token is validated by the public API.
+  {
+    path: "/project-status/:token",
+    element: <PublicProjectStatusPage />,
+  },
+
   // Public authentication routes. Existing sessions go straight to their portal.
   {
     path: "/login",

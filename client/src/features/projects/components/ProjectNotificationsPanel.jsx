@@ -1,0 +1,10 @@
+import { Bell, Info } from "lucide-react";
+import { formatProjectDate } from "../utils/project-tracker.js";
+
+function ProjectNotificationsPanel({ notifications = [], isLoading = false, isError = false, onRetry = () => {} }) {
+  if (isLoading) return <div className="space-y-2"><div className="h-16 animate-pulse rounded-xl bg-slate-100" /><div className="h-16 animate-pulse rounded-xl bg-slate-100" /></div>;
+  if (isError) return <div className="rounded-xl bg-red-50 p-4 text-xs text-red-800">Notification history could not be loaded. <button type="button" onClick={onRetry} className="font-bold underline">Retry</button></div>;
+  return <div className="space-y-3"><div className="flex items-center justify-between"><p className="text-xs font-semibold text-brand-text">Project Notifications</p><span className="text-[10px] text-brand-muted">{notifications.length} records</span></div>{notifications.length ? notifications.map((item) => <article key={item.id} className="rounded-xl border border-slate-200 p-3"><div className="flex items-start gap-2"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><Bell size={16} /></span><div className="min-w-0 flex-1"><p className="text-xs font-bold text-slate-900">{item.title}</p><p className="mt-1 text-xs leading-5 text-slate-600">{item.message}</p><p className="mt-2 text-[10px] text-slate-500">{formatProjectDate(item.createdAt)} · {item.channel} · {item.deliveryStatus}</p></div></div></article>) : <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center text-xs text-brand-muted">No in-app notifications have been recorded for this project.</div>}<p className="flex items-start gap-2 rounded-lg bg-blue-50 p-3 text-[10px] leading-4 text-blue-900"><Info size={14} className="mt-0.5 shrink-0" />The current notification provider records simulated in-app delivery. It does not send real SMS, email or WhatsApp messages.</p></div>;
+}
+
+export default ProjectNotificationsPanel;

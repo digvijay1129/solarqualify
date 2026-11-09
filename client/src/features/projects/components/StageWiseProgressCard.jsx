@@ -28,7 +28,7 @@ function StageWiseProgressCard({ stageCounts = [] }) {
 
       <div className="grid grid-cols-[minmax(130px,.9fr)_minmax(0,1.1fr)] items-center gap-2 sm:gap-3">
         <div className="relative mx-auto aspect-square w-full max-w-[190px]">
-          <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" role="img" aria-label={`Donut chart showing ${total} illustrative projects across ${stageCounts.length} stages`}>
+          <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" role="img" aria-label={`Donut chart showing ${total} projects on the current API result page across ${stageCounts.length} milestones`}>
             <circle cx="66" cy="66" r={radius} fill="none" stroke="#E8EEF0" strokeWidth="17" />
             {circles.map((stage) => (
               <circle
@@ -60,7 +60,7 @@ function StageWiseProgressCard({ stageCounts = [] }) {
           ))}
         </ul>
       </div>
-      <p className="mt-3 text-[10px] leading-4 text-brand-muted">Illustrative distribution across the demo portfolio.</p>
+      <p className="mt-3 text-[10px] leading-4 text-brand-muted">Milestone distribution for the current page of live project results.</p>
     </section>
   );
 }

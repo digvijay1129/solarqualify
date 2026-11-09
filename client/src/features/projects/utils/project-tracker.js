@@ -111,7 +111,10 @@ export function getProjectStageState(project, stageId) {
 
 export function formatProjectDate(dateValue, fallback = "—") {
   if (!dateValue) return fallback;
-  const date = new Date(`${dateValue}T00:00:00`);
+  const normalized = typeof dateValue === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(dateValue)
+    ? `${dateValue}T00:00:00`
+    : dateValue;
+  const date = new Date(normalized);
   if (Number.isNaN(date.getTime())) return fallback;
   return new Intl.DateTimeFormat("en-IN", {
     day: "2-digit",
