@@ -26,6 +26,7 @@ function toDTO(q) {
     quotationNumber: q.quotationNumber ?? null,
     customerSnapshot: q.customerSnapshot ?? null,
     quotationStatus: q.quotationStatus,
+    customerDecisionAt: q.customerDecisionAt ?? null,
     generatedAt: q.generatedAt ?? null,
     systemCapacityKW: q.systemCapacityKW,
     estimatedAnnualGeneration: q.estimatedAnnualGeneration,
