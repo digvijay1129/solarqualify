@@ -256,10 +256,13 @@ describe('Rule Management Service', () => {
     expect(result.version).toBe(3);
     expect(modelMocks.generation.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        ruleName: 'Standard Annual Generation',
+        ruleName: expect.any(RegExp),
         status: 'active',
       })
     );
+
+    const conflictRuleNamePattern = modelMocks.generation.findOne.mock.calls[0][0].ruleName;
+    expect(conflictRuleNamePattern.test('standard annual generation')).toBe(true);
   });
 
   it('creates a generation assumption with a new version number', async () => {
