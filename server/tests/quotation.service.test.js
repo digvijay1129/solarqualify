@@ -148,6 +148,7 @@ describe('Quotation Service', () => {
 
   it('allows the owning homeowner to accept a generated quotation', async () => {
     Quotation.findById.mockReturnValue(query(quotation));
+    Quotation.findOneAndUpdate.mockReturnValue(query({ ...quotation, quotationStatus: 'accepted' }));
     mockLead({ _id: LEAD_ID });
 
     const result = await decideQuotation(homeowner, QUOTATION_ID, { decision: 'accepted' });
