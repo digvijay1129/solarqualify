@@ -68,6 +68,38 @@ const leadSchema = new mongoose.Schema(
       default: 'unknown',
     },
 
+    // Property details captured by the homeowner qualification form.
+    pincode: {
+      type: String,
+      trim: true,
+      match: [/^\\d{6}$/, 'Pincode must contain exactly 6 digits.'],
+      default: null,
+    },
+
+    roofType: {
+      type: String,
+      enum: ['RCC Flat Roof', 'Tiled Roof', 'Metal Sheet', 'Other', null],
+      default: null,
+    },
+
+    roofAreaSqFt: {
+      type: Number,
+      min: 0.01,
+      default: null,
+    },
+
+    sanctionedLoad: {
+      type: Number,
+      min: 0.01,
+      default: null,
+    },
+
+    sanctionedLoadUnit: {
+      type: String,
+      enum: ['kW', null],
+      default: null,
+    },
+
     monthlyElectricityBill: {
       type: Number,
       min: 0,
