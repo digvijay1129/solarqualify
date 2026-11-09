@@ -4,7 +4,7 @@ import Lead from '../leads/lead.model.js';
 import BillAnalysis from '../bills/bill-analysis.model.js';
 import { AppError } from '../../shared/errors/AppError.js';
 
-export const LEAD_SCORING_VERSION = '1.0.0';
+export const LEAD_SCORING_VERSION = '1.1.0';
 
 // Calibrated to the three client-provided sample leads: 3.2k bill / 340 units
 // is High, while tenant and low-consumption examples remain Low.
