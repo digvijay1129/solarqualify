@@ -6,6 +6,21 @@ describe('Project Model', () => {
   const validProject = () => ({
     leadId: new mongoose.Types.ObjectId(),
     quotationId: new mongoose.Types.ObjectId(),
+    homeownerId: new mongoose.Types.ObjectId(),
+    customerSnapshot: {
+      customerName: 'Test Homeowner',
+      email: 'homeowner@example.com',
+      phone: '9876543210',
+      propertyAddress: 'Pune, Maharashtra',
+      propertyType: 'residential',
+    },
+    quotationSnapshot: {
+      quotationNumber: 'SQ-12345678',
+      systemCapacityKW: 3,
+      estimatedAnnualGeneration: 4200,
+      netInstallationCost: 127000,
+      applicableSubsidy: 78000,
+    },
   });
 
   it('should create a valid project with default values', async () => {
@@ -44,6 +59,26 @@ describe('Project Model', () => {
     await expect(project.validate()).resolves.toBeUndefined();
     expect(project.milestoneHistory).toHaveLength(1);
     expect(project.projectDocuments).toHaveLength(1);
+  });
+
+  it('stores append-only project events and hides token lifecycle fields', () => {
+    expect(Project.schema.path('statusTokenHash').options.select).toBe(false);
+    expect(Project.schema.path('statusTokenIssuedAt').options.select).toBe(false);
+    expect(Project.schema.path('statusTokenExpiresAt').options.select).toBe(false);
+    expect(Project.schema.path('statusTokenRevokedAt').options.select).toBe(false);
+
+    const project = new Project({
+      ...validProject(),
+      projectHistory: [{
+        eventType: 'project_created',
+        toStage: 'site_survey',
+        toProjectStatus: 'active',
+        note: 'Created from accepted quotation.',
+      }],
+    });
+
+    expect(project.projectHistory).toHaveLength(1);
+    expect(project.projectHistory[0].eventType).toBe('project_created');
   });
 
   it('should reject a project without a lead ID', async () => {
