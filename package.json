@@ -14,7 +14,8 @@
     "dev:server": "npm run dev --workspace=@solarqualify/server",
     "start:server": "npm run start --workspace=@solarqualify/server",
     "test:client": "npm run test --workspace=@solarqualify/client",
-    "test:server": "npm run test --workspace=@solarqualify/server"
+    "test:server": "npm run test --workspace=@solarqualify/server",
+    "seed:demo": "npm run seed:demo --workspace=@solarqualify/server"
   },
   "engines": {
     "node": ">=22.0.0",
