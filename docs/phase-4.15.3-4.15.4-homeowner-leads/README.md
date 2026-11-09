@@ -17,9 +17,7 @@ The homeowner portal now loads account-scoped records using the authenticated AP
 
 ### Lead form field scope
 
-The current lead model persists customer name, email, phone, combined property address, property type, ownership, monthly electricity bill, monthly units and consent.
-
-The existing UI also asks for preferred contact method, roof type, roof area and sanctioned load. Those fields are not persisted by the current lead endpoint and are not sent as if they were saved. The form identifies that limitation on the review step. They should be added to a validated lead/property schema or a separate property-details endpoint before they are advertised as stored account data.
+The lead model persists customer name, email, phone, combined property address, six-digit pincode, property type, ownership, roof type, roof area in square feet, optional homeowner-declared sanctioned load (kW), monthly electricity bill, monthly units and consent. Server-side validation rejects malformed pincodes, unsupported roof types, non-positive roof areas and non-positive declared loads. The pincode is stored separately as well as being present in the display address.
 
 ### Bill upload and verification
 
