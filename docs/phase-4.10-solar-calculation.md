@@ -22,7 +22,7 @@ The POST payload accepts optional `effectiveOn`, `pricingRuleId`, `subsidyRuleId
 - Generation: `unitsPerKWPerYear`.
 - Subsidy: increasing `upToKW` slab limits, each `amountPerKW`, and `maximumSubsidy`.
 
-Rule effective periods are evaluated inclusively. The selected rule IDs, names, versions and values are copied into the quotation snapshots.
+Rule effective periods are evaluated inclusively. The selected rule IDs, names, versions, values and effective-from/effective-to dates are copied into the quotation snapshots.
 
 ## Fixed formulas — calculation version 1.0.0
 

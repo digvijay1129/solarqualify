@@ -71,6 +71,25 @@ describe('Quotation Model', () => {
     expect(quotation.estimatedPaybackYears).toBeNull();
   });
 
+  it('preserves the selected rule effective periods in quotation snapshots', async () => {
+    const data = validQuotation();
+    const effectiveFrom = new Date('2026-01-01T00:00:00.000Z');
+    const effectiveTo = new Date('2026-12-31T00:00:00.000Z');
+    data.pricingSnapshot.effectiveFrom = effectiveFrom;
+    data.pricingSnapshot.effectiveTo = effectiveTo;
+    data.subsidySnapshot.effectiveFrom = effectiveFrom;
+    data.subsidySnapshot.effectiveTo = effectiveTo;
+    data.generationSnapshot.effectiveFrom = effectiveFrom;
+    data.generationSnapshot.effectiveTo = effectiveTo;
+
+    const quotation = new Quotation(data);
+    await expect(quotation.validate()).resolves.toBeUndefined();
+
+    expect(quotation.pricingSnapshot.effectiveFrom).toEqual(effectiveFrom);
+    expect(quotation.subsidySnapshot.effectiveTo).toEqual(effectiveTo);
+    expect(quotation.generationSnapshot.effectiveFrom).toEqual(effectiveFrom);
+  });
+
   it('should reject a quotation without a lead ID', async () => {
     const data = validQuotation();
     delete data.leadId;

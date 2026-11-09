@@ -280,7 +280,6 @@ function buildPricingSnapshot(rule) {
     ruleId: rule._id,
     ruleName: rule.ruleName,
     version: rule.version,
-    version: rule.version,
     pricePerKW: rule.pricePerKW,
     installationCharges: rule.installationCharges,
     effectiveFrom: rule.effectiveFrom,
