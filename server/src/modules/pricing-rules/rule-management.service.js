@@ -650,6 +650,8 @@ export async function updateRuleStatus(
         _id: existing._id,
         status: existing.status,
         version: existing.version,
+        effectiveFrom: existing.effectiveFrom,
+        effectiveTo: existing.effectiveTo ?? null,
       },
       {
         $set: {

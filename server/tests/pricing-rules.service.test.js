@@ -190,6 +190,35 @@ describe('Rule Management Service', () => {
     }));
   });
 
+  it('creates a directly active generation version when its period does not conflict', async () => {
+    modelMocks.generation.findOne.mockImplementation((filter) => (
+      filter.status === 'active' ? query(null) : query({ version: 2 })
+    ));
+    modelMocks.generation.create.mockResolvedValue(
+      createdRule({
+        version: 3,
+        status: 'active',
+        unitsPerKWPerYear: 1400,
+      })
+    );
+
+    const result = await createRuleVersion(staff, 'generation', {
+      ruleName: 'Standard Annual Generation',
+      unitsPerKWPerYear: 1400,
+      effectiveFrom: '2026-12-01',
+      status: 'active',
+    });
+
+    expect(result.status).toBe('active');
+    expect(result.version).toBe(3);
+    expect(modelMocks.generation.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ruleName: 'Standard Annual Generation',
+        status: 'active',
+      })
+    );
+  });
+
   it('creates a generation assumption with a new version number', async () => {
     modelMocks.generation.findOne.mockReturnValue(query({ version: 2 }));
     modelMocks.generation.create.mockResolvedValue(
@@ -407,6 +436,36 @@ describe('Rule Management Service', () => {
     expect(modelMocks.pricing.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'active' }),
       { $set: { status: 'active', effectiveTo: new Date('2026-11-30T00:00:00.000Z') } },
+      expect.objectContaining({ runValidators: true })
+    );
+  });
+
+  it('uses a compare-and-set filter for effective-period changes', async () => {
+    const existing = createdRule({
+      status: 'active',
+      effectiveFrom: new Date('2026-01-01T00:00:00.000Z'),
+      effectiveTo: null,
+    });
+    const updated = {
+      ...existing,
+      effectiveTo: new Date('2026-11-30T00:00:00.000Z'),
+    };
+    modelMocks.pricing.findById.mockReturnValue(query(existing));
+    modelMocks.pricing.findOneAndUpdate.mockReturnValue(query(updated));
+
+    await updateRuleStatus(staff, 'pricing', RULE_ID, {
+      status: 'active',
+      effectiveTo: '2026-11-30',
+    });
+
+    expect(modelMocks.pricing.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'active',
+        version: existing.version,
+        effectiveFrom: existing.effectiveFrom,
+        effectiveTo: null,
+      }),
+      expect.any(Object),
       expect.objectContaining({ runValidators: true })
     );
   });

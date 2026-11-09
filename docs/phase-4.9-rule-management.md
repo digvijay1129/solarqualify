@@ -15,7 +15,7 @@ A version can be made active or inactive. An active version can also receive an 
 
 ## Conflict prevention
 
-An activation is rejected when another active version with the same rule name has an overlapping effective period. The check applies both when a version is created directly as active and when a draft/inactive version is activated. Different rule names represent separate rule families and can have separate active periods.
+An activation is rejected when another active version with the same rule name has an overlapping effective period. The check applies both when a version is created directly as active and when a draft/inactive version is activated. A per-rule database lock serializes version creation and activation checks so two concurrent requests cannot both pass the same empty-overlap check. Status changes also use compare-and-set filters so stale updates cannot overwrite a newer effective period. Different rule names represent separate rule families and can have separate active periods.
 
 For subsidy rules, activation is blocked until Sales Staff records a `verified` decision. A rejected subsidy is automatically made inactive. Verification and activation are separate operations.
 

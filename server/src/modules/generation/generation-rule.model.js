@@ -58,6 +58,12 @@ const generationRuleSchema = new mongoose.Schema(
 
 generationRuleSchema.index({ status: 1, effectiveFrom: -1 });
 generationRuleSchema.index({ ruleName: 1, version: 1 }, { unique: true });
+generationRuleSchema.index({
+  ruleName: 1,
+  status: 1,
+  effectiveFrom: 1,
+  effectiveTo: 1,
+});
 
 const GenerationRule = mongoose.model(
   'GenerationRule',

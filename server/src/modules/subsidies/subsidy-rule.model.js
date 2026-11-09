@@ -103,6 +103,12 @@ const subsidyRuleSchema = new mongoose.Schema(
 
 subsidyRuleSchema.index({ status: 1, effectiveFrom: -1 });
 subsidyRuleSchema.index({ ruleName: 1, version: 1 }, { unique: true });
+subsidyRuleSchema.index({
+  ruleName: 1,
+  status: 1,
+  effectiveFrom: 1,
+  effectiveTo: 1,
+});
 
 const SubsidyRule = mongoose.model('SubsidyRule', subsidyRuleSchema);
 
