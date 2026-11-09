@@ -1,4 +1,4 @@
-import { createQuotation, getLeadQuotations, getQuotation, downloadQuotationPdf } from './quotation.service.js';
+import { createQuotation, getLeadQuotations, getQuotation, downloadQuotationPdf, decideQuotation } from './quotation.service.js';
 
 export async function createQuotationController(req, res) {
   const quotation = await createQuotation(req.user, req.params.leadId, req.body);
@@ -12,6 +12,15 @@ export async function getQuotationController(req, res) {
   const quotation = await getQuotation(req.user, req.params.quotationId);
   return res.status(200).json({ success: true, message: 'Quotation retrieved successfully.', data: { quotation } });
 }
+export async function decideQuotationController(req, res) {
+  const quotation = await decideQuotation(req.user, req.params.quotationId, req.body);
+  return res.status(200).json({
+    success: true,
+    message: 'Your quotation decision has been saved.',
+    data: { quotation },
+  });
+}
+
 export async function downloadQuotationPdfController(req, res) {
   const pdf = await downloadQuotationPdf(req.user, req.params.quotationId);
   res.set({
