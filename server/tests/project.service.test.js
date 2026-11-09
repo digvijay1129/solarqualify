@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   },
   lead: { findOne: vi.fn() },
   quotation: { findById: vi.fn() },
+  notifications: { createProjectEventNotifications: vi.fn() },
+  audit: { recordAuditEvent: vi.fn() },
 }));
 
 const stages = mocks.stages;
@@ -30,6 +32,12 @@ vi.mock('../src/modules/projects/project.model.js', () => ({
 }));
 vi.mock('../src/modules/leads/lead.model.js', () => ({ default: mocks.lead }));
 vi.mock('../src/modules/quotations/quotation.model.js', () => ({ default: mocks.quotation }));
+vi.mock('../src/modules/notifications/notification.service.js', () => ({
+  createProjectEventNotifications: mocks.notifications.createProjectEventNotifications,
+}));
+vi.mock('../src/modules/audit-logs/audit-log.service.js', () => ({
+  recordAuditEvent: mocks.audit.recordAuditEvent,
+}));
 
 import Project from '../src/modules/projects/project.model.js';
 import Lead from '../src/modules/leads/lead.model.js';
@@ -146,6 +154,8 @@ function mockAccessibleProject(value) {
 describe('Project Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.notifications.createProjectEventNotifications.mockResolvedValue([]);
+    mocks.audit.recordAuditEvent.mockResolvedValue({ _id: PROJECT_ID });
     Quotation.findById.mockReturnValue(query(quotation));
     Lead.findOne.mockReturnValue(query(lead));
     mockAccessibleProject(project());
@@ -194,6 +204,14 @@ describe('Project Service', () => {
     }));
     expect(result.id).toBe(PROJECT_ID);
     expect(result.milestones).toHaveLength(stages.length);
+    expect(mocks.audit.recordAuditEvent).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'PROJECT_CREATED',
+      resourceType: 'Project',
+    }));
+    expect(mocks.notifications.createProjectEventNotifications).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'project_created',
+      recipientIds: [HOMEOWNER_ID, STAFF_ID],
+    }));
   });
 
   it('rejects quotations that have not been accepted', async () => {
@@ -307,6 +325,14 @@ describe('Project Service', () => {
       note: 'Site survey signed off.',
     }));
     expect(result.currentStage).toBe('system_design');
+    expect(mocks.audit.recordAuditEvent).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'PROJECT_MILESTONE_UPDATED',
+    }));
+    expect(mocks.notifications.createProjectEventNotifications).toHaveBeenCalledWith(expect.objectContaining({
+      eventType: 'project_stage_updated',
+      stage: 'site_survey',
+      milestoneStatus: 'completed',
+    }));
   });
 
   it('prevents skipping ahead to a later project stage', async () => {

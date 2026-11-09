@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import Project, { PROJECT_STAGES } from './project.model.js';
 import Lead from '../leads/lead.model.js';
 import Quotation from '../quotations/quotation.model.js';
+import { createProjectEventNotifications } from '../notifications/notification.service.js';
+import { recordAuditEvent } from '../audit-logs/audit-log.service.js';
 import { AppError } from '../../shared/errors/AppError.js';
 
 const PROJECT_STATUSES = ['active', 'on_hold', 'completed', 'cancelled'];
@@ -179,8 +181,9 @@ export async function createProjectFromAcceptedQuotation(user, quotationId) {
     updatedAt: now,
   }));
 
+  let project;
   try {
-    const project = await Project.create({
+    project = await Project.create({
       leadId: lead._id,
       quotationId: quotation._id,
       homeownerId: lead.homeownerId ?? null,
@@ -213,14 +216,37 @@ export async function createProjectFromAcceptedQuotation(user, quotationId) {
         createdAt: now,
       }],
     });
-
-    return toProjectDTO(project.toObject());
   } catch (error) {
     if (error?.code === 11000) {
       throw new AppError('A project already exists for this quotation.', 409);
     }
     throw error;
   }
+
+  await recordAuditEvent({
+      actorId: user.id,
+      action: 'PROJECT_CREATED',
+      resourceType: 'Project',
+      resourceId: project._id,
+      metadata: {
+        projectId: String(project._id),
+        leadId: String(lead._id),
+        quotationId: String(quotation._id),
+        stage: PROJECT_STAGES[0],
+        toProjectStatus: 'active',
+      },
+    });
+
+    await createProjectEventNotifications({
+      projectId: project._id,
+      recipientIds: [lead.homeownerId, lead.assignedSalesStaffId],
+      actorId: user.id,
+      eventType: 'project_created',
+      stage: PROJECT_STAGES[0],
+      projectStatus: 'active',
+    });
+
+    return toProjectDTO(project.toObject());
 }
 
 export async function listProjects(user, filters = {}) {
@@ -439,6 +465,34 @@ export async function updateProjectStatus(user, projectId, payload) {
     throw new AppError('Project changed while you were updating it. Refresh and retry.', 409);
   }
 
+  const event = events[0];
+  const isMilestone = event.eventType === 'milestone_updated';
+
+  await recordAuditEvent({
+    actorId: user.id,
+    action: isMilestone ? 'PROJECT_MILESTONE_UPDATED' : 'PROJECT_STATUS_CHANGED',
+    resourceType: 'Project',
+    resourceId: updated._id,
+    metadata: {
+      projectId: String(updated._id),
+      leadId: String(updated.leadId),
+      stage: event.fromStage ?? updated.currentStage,
+      milestoneStatus: event.milestoneStatus ?? undefined,
+      fromProjectStatus: event.fromProjectStatus ?? undefined,
+      toProjectStatus: event.toProjectStatus ?? undefined,
+    },
+  });
+
+  await createProjectEventNotifications({
+    projectId: updated._id,
+    recipientIds: [updated.homeownerId, updated.assignedSalesStaffId],
+    actorId: user.id,
+    eventType: isMilestone ? 'project_stage_updated' : 'project_status_changed',
+    stage: event.fromStage ?? updated.currentStage,
+    milestoneStatus: event.milestoneStatus ?? null,
+    projectStatus: updated.projectStatus,
+  });
+
   return toProjectDTO(updated);
 }
 
@@ -488,6 +542,14 @@ export async function issuePublicProjectStatusToken(user, projectId) {
 
   if (!updated) throw new AppError('Project changed while the status link was being issued. Retry.', 409);
 
+  await recordAuditEvent({
+    actorId: user.id,
+    action: 'PROJECT_PUBLIC_TOKEN_ISSUED',
+    resourceType: 'Project',
+    resourceId: project._id,
+    metadata: { projectId: String(project._id), leadId: String(project.leadId) },
+  });
+
   return {
     token,
     path: '/api/v1/public/project-status/' + token,
@@ -532,6 +594,15 @@ export async function revokePublicProjectStatusToken(user, projectId) {
   ).lean();
 
   if (!updated) throw new AppError('Project status link changed before it could be revoked.', 409);
+
+  await recordAuditEvent({
+    actorId: user.id,
+    action: 'PROJECT_PUBLIC_TOKEN_REVOKED',
+    resourceType: 'Project',
+    resourceId: project._id,
+    metadata: { projectId: String(project._id), leadId: String(project.leadId) },
+  });
+
   return { projectId: toId(project._id), revokedAt: now, revoked: true };
 }
 

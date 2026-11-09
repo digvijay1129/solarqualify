@@ -10,6 +10,7 @@ import {
   issuePublicProjectStatusTokenController,
   revokePublicProjectStatusTokenController,
 } from './project.controller.js';
+import { getProjectNotificationsController } from '../notifications/notification.controller.js';
 
 const router = Router();
 
@@ -31,6 +32,7 @@ router.use(authenticate);
 router.use(authorize('homeowner', 'salesStaff'));
 
 router.get('/', listProjectsController);
+router.get('/:projectId/notifications', getProjectNotificationsController);
 router.get('/:projectId', getProjectController);
 
 // Only assigned Sales Staff can advance milestones or change operational status.
