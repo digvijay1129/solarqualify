@@ -7,6 +7,7 @@ import { useHomeownerPortal } from "../context/HomeownerPortalContext.jsx";
 import { formatCurrency, formatNumber } from "../utils/homeowner-portal.js";
 import HomeownerHero from "../components/HomeownerHero.jsx";
 import { downloadHomeownerQuotationPdf } from "../services/homeowner-files.service.js";
+import { decideHomeownerQuotation } from "../services/homeowner-portal.service.js";
 
 function formatDate(value) {
   if (!value) return "Not recorded";
@@ -18,6 +19,7 @@ function HomeownerQuotationsPage() {
   const { quotations = [], isLoading, isError, error, refetch, setNotice } = useHomeownerPortal();
   const [selectedId, setSelectedId] = useState(null);
   const [downloading, setDownloading] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState(null);
 
   useEffect(() => {
     if (!selectedId && quotations.length) setSelectedId(quotations[0].id);
@@ -46,6 +48,25 @@ function HomeownerQuotationsPage() {
     }
   }
 
+  async function handleDecision(decision) {
+    if (!selected || decisionBusy) return;
+    setDecisionBusy(decision);
+    try {
+      await decideHomeownerQuotation(selected.id, decision);
+      await refetch();
+      setNotice({
+        tone: "success",
+        message: decision === "accepted"
+          ? "Quotation accepted. Sales Staff can now convert it into a project."
+          : "Quotation declined. Sales Staff can follow up with you.",
+      });
+    } catch (decisionError) {
+      setNotice({ tone: "error", message: decisionError?.message || "Your decision could not be saved. Please retry." });
+    } finally {
+      setDecisionBusy(null);
+    }
+  }
+
   if (isLoading) return <div className="space-y-4" aria-label="Loading quotations"><div className="h-24 animate-pulse rounded-2xl bg-slate-200" /><div className="h-80 animate-pulse rounded-2xl bg-slate-200" /></div>;
   if (isError) return <section className="rounded-2xl border border-red-200 bg-white p-6"><h1 className="text-lg font-black text-slate-950">Quotations could not be loaded</h1><p className="mt-2 text-sm text-red-800">{error?.message || "Please retry."}</p><button type="button" onClick={() => refetch()} className="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Retry</button></section>;
 
@@ -64,6 +85,9 @@ function HomeownerQuotationsPage() {
           {selected && <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-wider text-emerald-800">Quotation detail</p><h2 className="mt-1 break-all text-xl font-black text-slate-950">{selected.quotationNumber || "Solar quotation"}</h2><p className="mt-1 text-xs text-slate-500">Generated {formatDate(selected.createdAt)}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-900">{selected.status}</span></div>
             <button type="button" disabled={downloading} onClick={handleDownload} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-extrabold text-white hover:bg-emerald-800 disabled:opacity-60"><ArrowDownToLine size={16} />{downloading ? "Preparing PDF…" : "Download Quotation PDF"}</button>
+            {(selected.statusCode === "generated" || selected.statusCode === "sent") && <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 p-3"><p className="mr-auto text-xs text-emerald-950">Review your proposal and record your decision.</p><button type="button" disabled={Boolean(decisionBusy)} onClick={() => handleDecision("accepted")} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-extrabold text-white hover:bg-emerald-800 disabled:opacity-60">{decisionBusy === "accepted" ? "Saving…" : "Accept quotation"}</button><button type="button" disabled={Boolean(decisionBusy)} onClick={() => handleDecision("rejected")} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60">{decisionBusy === "rejected" ? "Saving…" : "Decline"}</button></div>}
+            {selected.statusCode === "accepted" && <p className="rounded-xl bg-emerald-50 p-3 text-xs text-emerald-900">You accepted this quotation. Sales Staff can now create and track the installation project.</p>}
+            {selected.statusCode === "rejected" && <p className="rounded-xl bg-slate-50 p-3 text-xs text-slate-700">You declined this quotation. Contact Sales Staff if you need a revised proposal.</p>}
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[[Zap, `${selected.systemSizeKw ?? "—"} kW`, "System capacity"], [Sun, `${formatNumber(selected.annualGenerationUnits)} units`, "Estimated annual generation"], [ShieldCheck, formatCurrency(selected.subsidyAmount), "Applicable subsidy"], [FileText, formatCurrency(selected.netInstallationCost), "Net installation cost"]].map(([Icon, value, label]) => <article key={label} className="rounded-xl border border-slate-100 bg-slate-50 p-3"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-emerald-800"><Icon size={18} /></span><p className="mt-2 break-words text-sm font-black text-slate-950">{value}</p><p className="mt-1 text-[10px] text-slate-500">{label}</p></article>)}
