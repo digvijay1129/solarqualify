@@ -30,6 +30,12 @@ const pricingRuleSchema = new mongoose.Schema(
     effectiveTo: {
       type: Date,
       default: null,
+      validate: {
+        validator(value) {
+          return !value || !this.effectiveFrom || value > this.effectiveFrom;
+        },
+        message: 'Effective end date must be later than the start date.',
+      },
     },
 
     version: {
@@ -59,6 +65,12 @@ const pricingRuleSchema = new mongoose.Schema(
 
 pricingRuleSchema.index({ status: 1, effectiveFrom: -1 });
 pricingRuleSchema.index({ ruleName: 1, version: 1 }, { unique: true });
+pricingRuleSchema.index({
+  ruleName: 1,
+  status: 1,
+  effectiveFrom: 1,
+  effectiveTo: 1,
+});
 
 const PricingRule = mongoose.model('PricingRule', pricingRuleSchema);
 

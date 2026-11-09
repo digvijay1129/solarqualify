@@ -1,4 +1,4 @@
-﻿import mongoose from 'mongoose';
+import mongoose from 'mongoose';
 import { describe, expect, it } from 'vitest';
 import PricingRule from '../src/modules/pricing/pricing-rule.model.js';
 
@@ -49,6 +49,15 @@ describe('Pricing Rule Model', () => {
     });
 
     await expect(rule.validate()).rejects.toHaveProperty('errors.version');
+  });
+
+  it('should reject an effective end date that is not later than the start date', async () => {
+    const rule = new PricingRule({
+      ...validRule(),
+      effectiveTo: new Date('2026-01-01'),
+    });
+
+    await expect(rule.validate()).rejects.toHaveProperty('errors.effectiveTo');
   });
 
   it('should reject an unsupported status', async () => {
