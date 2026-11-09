@@ -68,7 +68,7 @@ describe("Pricing and Subsidy API integration service", () => {
       status: "draft",
       verificationStatus: "unverified",
     });
-    expect(result.generation.unitsPerKWPerYear).toBeNull();
+    expect(result.generation.unitsPerKwPerYear).toBeNull();
     expect(result.activeRules.pricing).toBeNull();
   });
 
