@@ -100,7 +100,7 @@ function HomeownerQuotationsPage() {
 
             {selected.calculationReasons?.length > 0 && <section className="rounded-xl border border-slate-100 p-4"><h3 className="text-sm font-black text-slate-950">Calculation explanation</h3><div className="mt-3 space-y-3">{selected.calculationReasons.map((reason,index) => <div key={reason.code || index} className="border-l-2 border-emerald-200 pl-3"><p className="text-xs font-bold text-slate-950">{reason.label || reason.code}</p><p className="mt-1 text-xs leading-5 text-slate-600">{reason.detail || reason.formula || "No additional detail supplied."}</p></div>)}</div></section>}
 
-            <div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-950"><Info size={16} className="mt-0.5 shrink-0" /><p>Subsidy values are calculated only from the configured rule snapshot. A verified rule does not establish individual government eligibility. There is no homeowner acceptance or change-request endpoint yet; this page is read-only.</p></div>
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-950"><Info size={16} className="mt-0.5 shrink-0" /><p>Subsidy values are calculated only from the configured rule snapshot. A verified rule does not establish individual government eligibility. Your decision is recorded by the backend. Accepted quotations can be converted into a project by Sales Staff. A change-request workflow is not available yet.</p></div>
           </section>}
         </div>
       )}
