@@ -72,7 +72,7 @@ const leadSchema = new mongoose.Schema(
     pincode: {
       type: String,
       trim: true,
-      match: [/^\\d{6}$/, 'Pincode must contain exactly 6 digits.'],
+      match: [/^\d{6}$/, 'Pincode must contain exactly 6 digits.'],
       default: null,
     },
 
