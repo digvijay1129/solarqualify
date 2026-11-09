@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, Download, FileText, RefreshCw, ShieldCheck, 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../authentication/context/AuthContext.jsx";
 import { claimLead } from "../../leads/services/leads.service.js";
+import { createProjectFromAcceptedQuotation } from "../../projects/services/projects.service.js";
 import {
   createFormalQuotation,
   downloadSavedQuotationPdf,
@@ -113,6 +114,16 @@ function QuotationBuilderPage() {
     onError: (error) => setNotice({ tone: "error", message: error?.message || "The backend could not generate this quotation." }),
   });
 
+  const createProjectMutation = useMutation({
+    mutationFn: (quotationId) => createProjectFromAcceptedQuotation(quotationId),
+    onSuccess: async (project) => {
+      setNotice({ tone: "success", message: project ? "Project created from accepted quotation." : "Project could not be created." });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      navigate("/projects");
+    },
+    onError: (error) => setNotice({ tone: "error", message: error?.message || "Project creation failed. Confirm that the quotation is accepted and the lead is assigned to you." }),
+  });
+
   const sortedQuotations = useMemo(
     () => [...(quotationsQuery.data ?? [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
     [quotationsQuery.data]
@@ -191,7 +202,7 @@ function QuotationBuilderPage() {
         {!hasConfirmedAccess ? <p className="mt-4 rounded-lg bg-slate-50 p-4 text-xs text-slate-600">Confirm the lead assignment to retrieve its saved quotation history.</p>
           : quotationsQuery.isPending ? <p className="mt-4 text-xs text-slate-500">Loading saved quotations…</p>
           : quotationsQuery.isError ? <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-xs text-red-800">{quotationsQuery.error?.message || "Quotation history could not be loaded."}</p>
-          : sortedQuotations.length ? <div className="mt-4 space-y-3">{sortedQuotations.map((quotation) => <QuotationHistoryRow key={quotation.id} quotation={quotation} onDownload={() => downloadPdf(quotation)} downloading={downloadingId === quotation.id} />)}</div>
+          : sortedQuotations.length ? <div className="mt-4 space-y-3">{sortedQuotations.map((quotation) => <QuotationHistoryRow key={quotation.id} quotation={quotation} onDownload={() => downloadPdf(quotation)} downloading={downloadingId === quotation.id} onCreateProject={() => createProjectMutation.mutate(quotation.id)} creatingProject={createProjectMutation.isPending && createProjectMutation.variables === quotation.id} />)}</div>
           : <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-8 text-center"><FileText className="mx-auto text-slate-400" size={28} /><p className="mt-2 text-sm font-bold text-slate-900">No saved quotations yet</p><p className="mt-1 text-xs text-slate-500">Generate a formal quotation after the selected lead meets the backend requirements.</p></div>}
       </section>
 
@@ -222,8 +233,8 @@ function QuotationResultCard({ quotation }) {
   return <section className="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm sm:p-5"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-extrabold uppercase tracking-wide text-emerald-800">Saved formal quotation</p><h2 className="mt-1 text-xl font-black text-slate-950">{quotation.quotationNumber || "Quotation generated"}</h2></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-900">{quotation.quotationStatus}</span></div><div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">{rows.map(([label,value]) => <div key={label} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 p-3"><span className="text-xs text-slate-600">{label}</span><strong className="text-right text-xs text-slate-950">{value}</strong></div>)}</div><div className="mt-4"><p className="text-xs font-bold text-slate-900">Calculation explanation</p><ul className="mt-2 space-y-2">{(quotation.calculationReasons ?? []).map((reason) => <li key={reason.code} className="border-l-2 border-emerald-200 pl-3"><p className="text-xs font-bold text-slate-900">{reason.label}</p><p className="mt-0.5 text-[11px] leading-5 text-slate-600">{reason.detail}</p></li>)}</ul></div></section>;
 }
 
-function QuotationHistoryRow({ quotation, onDownload, downloading }) {
-  return <article className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div className="min-w-0"><p className="break-all text-sm font-extrabold text-slate-950">{quotation.quotationNumber || quotation.id}</p><p className="mt-1 text-[11px] text-slate-500">{quotation.quotationStatus} · {new Date(quotation.createdAt).toLocaleString("en-IN")}</p><p className="mt-1 text-xs font-semibold text-slate-700">{quotation.systemCapacityKW} kW · {currency(quotation.netInstallationCost)}</p></div><button type="button" onClick={onDownload} disabled={downloading || quotation.quotationStatus === "draft"} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-emerald-700 px-3 text-xs font-bold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"><Download size={15} />{downloading ? "Preparing…" : "Download PDF"}</button></article>;
+function QuotationHistoryRow({ quotation, onDownload, downloading, onCreateProject, creatingProject }) {
+  return <article className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3"><div className="min-w-0"><p className="break-all text-sm font-extrabold text-slate-950">{quotation.quotationNumber || quotation.id}</p><p className="mt-1 text-[11px] text-slate-500">{quotation.quotationStatus} · {new Date(quotation.createdAt).toLocaleString("en-IN")}</p><p className="mt-1 text-xs font-semibold text-slate-700">{quotation.systemCapacityKW} kW · {currency(quotation.netInstallationCost)}</p></div><div className="flex flex-wrap items-center gap-2"><button type="button" onClick={onDownload} disabled={downloading || quotation.quotationStatus === "draft"} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-emerald-700 px-3 text-xs font-bold text-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"><Download size={15} />{downloading ? "Preparing…" : "Download PDF"}</button>{quotation.quotationStatus === "accepted" && <button type="button" onClick={onCreateProject} disabled={creatingProject} className="inline-flex min-h-9 items-center gap-2 rounded-lg bg-emerald-700 px-3 text-xs font-bold text-white disabled:opacity-60">{creatingProject ? "Creating…" : "Create Project"}</button>}</div></article>;
 }
 
 export default QuotationBuilderPage;
