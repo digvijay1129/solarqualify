@@ -261,3 +261,16 @@ export async function downloadHomeownerBill(leadId) {
 export async function deleteHomeownerBill(leadId) {
   return apiRequest(`/leads/${leadId}/bill`, { method: "DELETE" });
 }
+
+
+export async function decideHomeownerQuotation(quotationId, decision) {
+  if (!quotationId) throw new Error("A quotation ID is required.");
+  if (!["accepted", "rejected"].includes(decision)) {
+    throw new Error("Decision must be accepted or rejected.");
+  }
+  const response = unwrap(await apiRequest(`/quotations/${quotationId}/decision`, {
+    method: "PATCH",
+    body: { decision },
+  }));
+  return response?.quotation ?? null;
+}
