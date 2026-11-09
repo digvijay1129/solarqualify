@@ -24,7 +24,7 @@ Quotation generation requires the backend lead status to be qualified and a comp
 
 ### Current API boundary
 
-The backend creates a formal quotation in one operation. It does not expose a separate quotation draft-save endpoint, homeowner acceptance endpoint or send-quotation endpoint in this phase. The former local-only “Save Draft” action was removed rather than presented as persisted functionality.
+The backend creates a formal quotation in one operation. It does not expose a separate quotation draft-save or send-quotation endpoint. The homeowner decision endpoint PATCH /quotations/:quotationId/decision allows the owning homeowner to accept or reject a generated/sent quotation; the decision timestamp is persisted. Sales Staff can then create a project from an accepted quotation. The former local-only “Save Draft” action was removed rather than presented as persisted functionality.
 
 The quotation list shows records for the selected lead. The backend returns immutable pricing, subsidy and generation snapshots, so later rule edits do not rewrite previously issued quotation records.
 
