@@ -106,8 +106,30 @@ const leadSchema = new mongoose.Schema(
     },
 
     qualificationReasons: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
+    },
+
+    qualificationScoringVersion: {
+      type: String,
+      trim: true,
+      maxlength: 20,
+      default: null,
+    },
+
+    qualificationEvaluatedAt: {
+      type: Date,
+      default: null,
+    },
+
+    qualificationDataGaps: {
       type: [String],
       default: [],
+    },
+
+    qualificationInputs: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
 
     status: {

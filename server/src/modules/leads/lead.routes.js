@@ -15,6 +15,10 @@ import {
 } from './lead.controller.js';
 
 import { uploadBill } from '../bills/bill-upload.middleware.js';
+import {
+  qualifyLeadController,
+  getLeadQualificationController,
+} from '../lead-scoring/lead-scoring.controller.js';
 
 import {
   uploadBillDocumentController,
@@ -53,6 +57,20 @@ const billVerificationLimiter = rateLimit({
 
 // Every Leads endpoint requires authentication.
 router.use(authenticate);
+
+// Only assigned Sales Staff can recalculate a lead qualification.
+router.post(
+  '/:leadId/qualify',
+  leadWriteLimiter,
+  authorize('salesStaff'),
+  qualifyLeadController
+);
+
+router.get(
+  '/:leadId/qualification',
+  authorize('homeowner', 'salesStaff'),
+  getLeadQualificationController
+);
 
 // Overview must be declared before the dynamic lead ID route.
 router.get(
