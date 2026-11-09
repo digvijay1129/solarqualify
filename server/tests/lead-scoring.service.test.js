@@ -114,7 +114,7 @@ describe('Lead Scoring Service', () => {
     const current = lead();
     mockLeadQuery(current);
     mockBillQuery(null);
-    mockUpdatedLead({ ...current, leadScore: 68, priority: 'medium' });
+    mockUpdatedLead({ ...current, leadScore: 68, priority: 'high' });
 
     await qualifyLead(staff, LEAD_ID);
 
