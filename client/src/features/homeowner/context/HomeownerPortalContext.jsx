@@ -1,43 +1,91 @@
-import { createContext, useContext, useMemo, useState } from "react";
-import { getHomeownerPortalDemoData } from "../../../mocks/repositories/homeowner-portal.repository.js";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "../../authentication/context/AuthContext.jsx";
+import { getHomeownerPortalSession } from "../services/homeowner-portal.service.js";
 
 const HomeownerPortalContext = createContext(null);
 
 export function HomeownerPortalProvider({ children }) {
-  const [initialData] = useState(() => getHomeownerPortalDemoData());
-  const [profile, setProfile] = useState(initialData.profile);
-  const [documents, setDocuments] = useState(initialData.documents);
-  const [leadSubmissions, setLeadSubmissions] = useState([]);
-  const [supportRequests, setSupportRequests] = useState([]);
-  const [notificationPreferences, setNotificationPreferences] = useState(initialData.notificationPreferences);
-  const [contactPreferences, setContactPreferences] = useState(initialData.contactPreferences);
-  const [quoteDecisions, setQuoteDecisions] = useState({});
+  const { user } = useAuth();
   const [notice, setNotice] = useState(null);
+  const [profileOverride, setProfileOverride] = useState(null);
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    projectUpdates: true,
+    quotationUpdates: true,
+    subsidyAlerts: true,
+    productUpdates: false,
+  });
+  const [contactPreferences, setContactPreferences] = useState({
+    email: true,
+    phone: true,
+    whatsapp: false,
+  });
+  const [supportRequests, setSupportRequests] = useState([]);
+
+  const query = useQuery({
+    queryKey: ["homeowner", "portal", user?.id],
+    queryFn: () => getHomeownerPortalSession(user),
+    enabled: Boolean(user?.id),
+    staleTime: 30 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.data?.profile) setProfileOverride(query.data.profile);
+  }, [query.data?.profile]);
+
+  const data = query.data;
+  const profile = profileOverride ?? data?.profile ?? {
+    fullName: user?.name ?? "",
+    email: user?.email ?? "",
+    mobileNumber: String(user?.phone ?? "").replace(/^\+91\s*/, ""),
+    city: "",
+    state: "",
+    addressLine1: "",
+    pincode: "",
+    propertyType: "",
+    ownershipStatus: "",
+    roofType: "",
+    roofAreaSqFt: "",
+    monthlyElectricityBill: "",
+    monthlyUnits: "",
+  };
 
   const value = useMemo(() => ({
-    ...initialData,
+    ...(data ?? {}),
     profile,
-    setProfile,
-    documents,
-    setDocuments,
-    leadSubmissions,
-    setLeadSubmissions,
+    setProfile: setProfileOverride,
+    project: data?.project ?? null,
+    projects: data?.projects ?? [],
+    quotations: data?.quotations ?? [],
+    documents: data?.documents ?? [],
+    activities: data?.activities ?? [],
+    leads: data?.leads ?? [],
+    leadSubmissions: data?.leadSubmissions ?? [],
     supportRequests,
-    setSupportRequests,
+    addSupportRequest(request) {
+      setSupportRequests((current) => [{
+        ...request,
+        id: `LOCAL-SUPPORT-${current.length + 1}`,
+        createdAt: new Date().toISOString(),
+      }, ...current]);
+    },
     notificationPreferences,
     setNotificationPreferences,
     contactPreferences,
     setContactPreferences,
-    quoteDecisions,
-    setQuoteDecisions,
+    faqs: data?.faqs ?? [],
+    supportTopics: data?.supportTopics ?? [],
     notice,
     setNotice,
-    addDocument(document) { setDocuments((current) => [document, ...current]); },
-    removeDocument(documentId) { setDocuments((current) => current.filter((item) => item.id !== documentId)); },
-    submitLead(lead) { const id = `DEMO-LEAD-${String(Date.now()).slice(-6)}`; setLeadSubmissions((current) => [{ ...lead, id, submittedAt: new Date().toISOString() }, ...current]); return id; },
-    addSupportRequest(request) { setSupportRequests((current) => [{ ...request, id: `DEMO-SUPPORT-${String(current.length + 1).padStart(3, "0")}`, createdAt: new Date().toISOString() }, ...current]); },
-    updateQuoteDecision(quotationId, decision) { setQuoteDecisions((current) => ({ ...current, [quotationId]: decision })); },
-  }), [initialData, profile, documents, leadSubmissions, supportRequests, notificationPreferences, contactPreferences, quoteDecisions, notice]);
+    isLoading: query.isPending,
+    isError: query.isError,
+    error: query.error,
+    refetch: query.refetch,
+  }), [
+    data, profile, supportRequests, notificationPreferences,
+    contactPreferences, notice, query.isPending, query.isError,
+    query.error, query.refetch,
+  ]);
 
   return <HomeownerPortalContext.Provider value={value}>{children}</HomeownerPortalContext.Provider>;
 }

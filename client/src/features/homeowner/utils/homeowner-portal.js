@@ -15,11 +15,10 @@ export const LEAD_STEPS = [
   { id: 5, label: "Review & Submit", description: "Confirm and submit your inquiry" },
 ];
 
-export const DOCUMENT_CATEGORIES = ["All Documents", "Quotations", "Bills", "Contracts", "Permits", "Invoices", "Project Files"];
-export const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "doc", "docx", "xls", "xlsx", "jpg", "jpeg", "png"];
-export const MAX_DOCUMENT_SIZE_MB = 25;
-export const MAX_BILL_SIZE_MB = 10;
-export const GENERATION_UNITS_PER_KW_YEAR = 1400;
+export const DOCUMENT_CATEGORIES = ["All Documents", "Quotations", "Bills"];
+export const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "webp"];
+export const MAX_DOCUMENT_SIZE_MB = 5;
+export const MAX_BILL_SIZE_MB = 5;
 
 export function formatCurrency(value) {
   if (value === null || value === undefined || value === "") return "Awaiting approved pricing";
@@ -31,14 +30,15 @@ export function formatCurrency(value) {
 }
 
 export function formatNumber(value) {
+  if (value === null || value === undefined || value === "") return "—";
   const number = Number(value);
   return Number.isFinite(number) ? new Intl.NumberFormat("en-IN").format(number) : "—";
 }
 
 export function annualGeneration(systemSizeKw) {
   const size = Number(systemSizeKw);
-  if (!Number.isFinite(size) || size <= 0 || size > 1000) return null;
-  return Math.round(size * GENERATION_UNITS_PER_KW_YEAR);
+  if (!Number.isFinite(size) || size <= 0) return null;
+  return Math.round(size * 1400);
 }
 
 export function validateEmail(email) {
@@ -90,7 +90,7 @@ export function validateLeadStep(step, values, billFile) {
     if (!String(values.monthlyUnits ?? "").trim() || !Number.isFinite(units) || units <= 0) errors.monthlyUnits = "Enter monthly units greater than zero.";
   }
   if (step === 4) {
-    const fileError = validateUploadFile(billFile, { maxSizeMB: MAX_BILL_SIZE_MB, allowedExtensions: ["pdf", "jpg", "jpeg", "png"] });
+    const fileError = validateUploadFile(billFile, { maxSizeMB: MAX_BILL_SIZE_MB, allowedExtensions: ["pdf", "jpg", "jpeg", "png", "webp"] });
     if (fileError) errors.billFile = fileError;
   }
   return errors;

@@ -1,95 +1,85 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  ArrowDownToLine, CheckCircle2, FileText, Info, MessageSquareText,
-  ShieldCheck, Sun, Zap, CircleHelp, PanelsTopLeft, ClipboardCheck,
+  ArrowDownToLine, CheckCircle2, FileText, Info, ShieldCheck,
+  Sun, Zap, ClipboardCheck, CircleHelp, LoaderCircle,
 } from "lucide-react";
 import { useHomeownerPortal } from "../context/HomeownerPortalContext.jsx";
-import { annualGeneration, formatCurrency } from "../utils/homeowner-portal.js";
+import { formatCurrency, formatNumber } from "../utils/homeowner-portal.js";
 import HomeownerHero from "../components/HomeownerHero.jsx";
-import rooftopImage from "../../../assets/images/solarqualify-homeowner-rooftop.jpg";
+import { downloadHomeownerQuotationPdf } from "../services/homeowner-files.service.js";
+
+function formatDate(value) {
+  if (!value) return "Not recorded";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Not recorded" : date.toLocaleDateString("en-IN");
+}
 
 function HomeownerQuotationsPage() {
-  const { quotations, quoteDecisions, updateQuoteDecision, setNotice } = useHomeownerPortal();
-  const [selectedId, setSelectedId] = useState(quotations[0]?.id ?? null);
-  const [changeMessage, setChangeMessage] = useState("");
-  const [requestingChanges, setRequestingChanges] = useState(false);
-  const selected = quotations.find((item) => item.id === selectedId) ?? quotations[0];
+  const { quotations = [], isLoading, isError, error, refetch, setNotice } = useHomeownerPortal();
+  const [selectedId, setSelectedId] = useState(null);
+  const [downloading, setDownloading] = useState(false);
 
-  if (!selected) return <div className="rounded-2xl bg-white p-8 text-center">No quotation records are available.</div>;
+  useEffect(() => {
+    if (!selectedId && quotations.length) setSelectedId(quotations[0].id);
+  }, [quotations, selectedId]);
 
-  const generation = annualGeneration(selected.systemSizeKw);
-  const decision = quoteDecisions[selected.id];
-  const status = decision || selected.status;
+  const selected = quotations.find((item) => item.id === selectedId) ?? quotations[0] ?? null;
+
+  async function handleDownload() {
+    if (!selected || downloading) return;
+    setDownloading(true);
+    try {
+      const blob = await downloadHomeownerQuotationPdf(selected.id);
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `${selected.quotationNumber || "SolarQualify-Quotation"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      setNotice({ tone: "success", message: "Quotation PDF download started." });
+    } catch (downloadError) {
+      setNotice({ tone: "error", message: downloadError?.message || "Quotation PDF could not be downloaded." });
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  if (isLoading) return <div className="space-y-4" aria-label="Loading quotations"><div className="h-24 animate-pulse rounded-2xl bg-slate-200" /><div className="h-80 animate-pulse rounded-2xl bg-slate-200" /></div>;
+  if (isError) return <section className="rounded-2xl border border-red-200 bg-white p-6"><h1 className="text-lg font-black text-slate-950">Quotations could not be loaded</h1><p className="mt-2 text-sm text-red-800">{error?.message || "Please retry."}</p><button type="button" onClick={() => refetch()} className="mt-3 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white">Retry</button></section>;
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div><p className="text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-800">Your solar proposals</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-[30px]">Solar Quotation</h1><p className="mt-1 text-sm text-slate-600">Review your system proposal, estimated generation and pricing information.</p></div>
-        <button type="button" onClick={() => setNotice({ tone: "warning", message: "Quotation PDF download is not connected. No PDF file was generated." })} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-xs font-extrabold text-slate-800 hover:bg-slate-50"><ArrowDownToLine size={16} /> Download Quotation</button>
-      </div>
+      <HomeownerHero eyebrow="Your solar proposals" title="Solar Quotations" description="Review quotations generated for your leads. Values and rule snapshots are shown as returned by the SolarQualify backend." compact />
+      {quotations.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-emerald-200 bg-white p-8 text-center"><span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-800"><FileText size={24} /></span><h2 className="mt-3 text-lg font-black text-slate-950">No quotations available</h2><p className="mt-1 text-sm text-slate-600">A quotation will appear here after Sales Staff qualify your lead and generate a quotation using active pricing and generation rules.</p></section>
+      ) : (
+        <div className="grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <h2 className="px-2 py-2 text-sm font-black text-slate-950">Your quotations ({quotations.length})</h2>
+            <div className="space-y-2">{quotations.map((item) => <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className={`w-full rounded-xl border p-3 text-left transition ${selected?.id === item.id ? "border-emerald-600 bg-emerald-50" : "border-slate-200 hover:bg-slate-50"}`}><p className="break-all text-xs font-extrabold text-slate-950">{item.quotationNumber || item.title}</p><p className="mt-1 text-[10px] text-slate-500">{formatDate(item.createdAt)}</p><span className="mt-2 inline-flex rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-700">{item.status}</span></button>)}</div>
+          </aside>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>Home</span><span>›</span><span>Quotations</span><span>›</span><strong className="text-slate-800">Quotation Details</strong><span className="ml-auto rounded-full bg-emerald-100 px-3 py-1 font-bold text-emerald-900">{status}</span></div>
-      <HomeownerHero eyebrow="SolarQualify proposal · illustrative" title="Your Rooftop Solar Quotation" description="Review the proposed system and the information still awaiting verified pricing." compact />
+          {selected && <section className="min-w-0 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-wider text-emerald-800">Quotation detail</p><h2 className="mt-1 break-all text-xl font-black text-slate-950">{selected.quotationNumber || "Solar quotation"}</h2><p className="mt-1 text-xs text-slate-500">Generated {formatDate(selected.createdAt)}</p></div><span className="rounded-full bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-900">{selected.status}</span></div>
+            <button type="button" disabled={downloading} onClick={handleDownload} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-extrabold text-white hover:bg-emerald-800 disabled:opacity-60"><ArrowDownToLine size={16} />{downloading ? "Preparing PDF…" : "Download Quotation PDF"}</button>
 
-      <section className="grid min-w-0 grid-cols-1 items-start gap-4 2xl:grid-cols-[1.75fr_.75fr]">
-        <div className="min-w-0 space-y-4">
-          <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[[Zap, `${selected.systemSizeKw} kW`, "System Size"], [Sun, `${generation?.toLocaleString("en-IN")} units/year`, "Estimated Generation*"], [ShieldCheck, formatCurrency(selected.subsidyAmount), "Illustrative Subsidy*"], [FileText, selected.validUntil || "Not set", "Valid Till"]].map(([Icon, value, label]) => <div key={label} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"><span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-800"><Icon size={20} /></span><p className="mt-2 break-words text-sm font-black text-slate-950">{value}</p><p className="mt-0.5 text-[10px] text-slate-500">{label}</p></div>)}
-          </section>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[[Zap, `${selected.systemSizeKw ?? "—"} kW`, "System capacity"], [Sun, `${formatNumber(selected.annualGenerationUnits)} units`, "Estimated annual generation"], [ShieldCheck, formatCurrency(selected.subsidyAmount), "Applicable subsidy"], [FileText, formatCurrency(selected.netInstallationCost), "Net installation cost"]].map(([Icon, value, label]) => <article key={label} className="rounded-xl border border-slate-100 bg-slate-50 p-3"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-emerald-800"><Icon size={18} /></span><p className="mt-2 break-words text-sm font-black text-slate-950">{value}</p><p className="mt-1 text-[10px] text-slate-500">{label}</p></article>)}
+            </div>
 
-          <section className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3"><PanelsTopLeft size={21} className="text-emerald-700" /><h2 className="text-base font-black text-slate-950">Proposed System</h2></div>
-              <dl className="mt-3 space-y-2.5 text-xs">{[["System Size", `${selected.systemSizeKw} kW`], ["Solar Panels", "Awaiting approved specification"], ["Inverter", "Awaiting approved specification"], ["Mounting Structure", "Awaiting site assessment"], ["Warranty", "Awaiting vendor confirmation"], ["Expected Lifespan", "Not specified"]].map(([label, value]) => <div key={label} className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2"><dt className="text-slate-500">{label}</dt><dd className="text-right font-bold text-slate-900">{value}</dd></div>)}</dl>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <section className="rounded-xl border border-slate-100 p-4"><h3 className="flex items-center gap-2 text-sm font-black text-slate-950"><ClipboardCheck size={17} className="text-emerald-700" /> Pricing breakdown</h3><dl className="mt-3 space-y-2 text-xs">{[["Equipment cost",selected.equipmentCost],["Installation charges",selected.installationCost],["Total installation cost",selected.totalInstallationCost],["Applicable subsidy",selected.subsidyAmount],["Net installation cost",selected.netInstallationCost]].map(([label,value]) => <div key={label} className="flex justify-between gap-3 border-b border-slate-100 pb-2"><dt className="text-slate-500">{label}</dt><dd className="text-right font-bold text-slate-950">{formatCurrency(value)}</dd></div>)}</dl></section>
+              <section className="rounded-xl border border-slate-100 p-4"><h3 className="flex items-center gap-2 text-sm font-black text-slate-950"><CircleHelp size={17} className="text-emerald-700" /> Calculation snapshots</h3><dl className="mt-3 space-y-2 text-xs">{[["Calculation version",selected.calculationVersion],["Pricing rule",selected.pricingSnapshot?.ruleName],["Pricing version",selected.pricingSnapshot?.version],["Generation rule",selected.generationSnapshot?.ruleName],["Generation rate",selected.generationSnapshot?.unitsPerKWPerYear ? `${selected.generationSnapshot.unitsPerKWPerYear} units/kW/year` : null],["Subsidy verification",selected.subsidySnapshot?.verificationStatus ?? "No verified subsidy rule applied"]].map(([label,value]) => <div key={label} className="flex justify-between gap-3 border-b border-slate-100 pb-2"><dt className="text-slate-500">{label}</dt><dd className="text-right font-bold text-slate-950">{value ?? "Not available"}</dd></div>)}</dl></section>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3"><Sun size={21} className="text-emerald-700" /><h2 className="text-base font-black text-slate-950">Estimated Benefits</h2></div>
-              <div className="mt-3 space-y-3 text-xs"><div className="flex items-center justify-between gap-3"><span className="text-slate-500">Annual Generation*</span><strong className="text-slate-950">{generation?.toLocaleString("en-IN")} units</strong></div><div className="flex items-center justify-between gap-3"><span className="text-slate-500">Generation Assumption</span><strong className="text-slate-950">1,400 units / kW / year</strong></div><div className="flex items-center justify-between gap-3"><span className="text-slate-500">Monthly / Annual Savings</span><strong className="text-slate-950">Not estimated</strong></div><div className="rounded-lg bg-amber-50 p-3 text-[11px] leading-5 text-amber-950">Actual energy output depends on site conditions, equipment, shading and system design. This estimate is not a performance guarantee.</div></div>
-            </div>
-          </section>
 
-          <section className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[1.15fr_.85fr]">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3"><ClipboardCheck size={21} className="text-emerald-700" /><h2 className="text-base font-black text-slate-950">Pricing Breakdown</h2></div>
-              <div className="mt-3 space-y-2 text-xs">
-                {[["Solar PV System", "Awaiting approved rate"], ["Inverter & Accessories", "Awaiting approved rate"], ["Mounting & Accessories", "Awaiting approved rate"], ["Installation & Commissioning", "Awaiting approved rate"]].map(([label, value]) => <div key={label} className="flex justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2"><span className="text-slate-600">{label}</span><strong className="text-right text-slate-900">{value}</strong></div>)}
-                <div className="flex justify-between gap-3 rounded-lg bg-slate-100 px-3 py-2.5 font-extrabold"><span>Total Cost (Before Subsidy)</span><span>Awaiting verified input</span></div>
-                <div className="flex justify-between gap-3 rounded-lg bg-amber-100 px-3 py-2.5 font-black text-slate-950"><span>Net Payable Amount</span><span>Awaiting verified input</span></div>
-              </div>
-              <p className="mt-3 text-[10px] leading-4 text-slate-500">Prices remain blank until approved equipment and installation rates are connected.</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-              <div className="flex items-center gap-2 border-b border-slate-100 pb-3"><ShieldCheck size={21} className="text-emerald-700" /><h2 className="text-base font-black text-slate-950">Subsidy / Incentive</h2></div>
-              <div className="mt-3 rounded-xl bg-emerald-50 p-3"><p className="text-xl font-black text-emerald-900">{formatCurrency(selected.subsidyAmount)}</p><p className="mt-1 text-[10px] font-bold text-amber-800">{selected.subsidyLabel}</p></div>
-              <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-[11px] leading-5 text-amber-950"><Info size={15} className="mt-0.5 shrink-0" />This is not an eligibility decision or a verified government benefit. Check the latest official scheme and DISCOM requirements.</div>
-              <p className="mt-3 text-[11px] leading-5 text-slate-500">{selected.notes}</p>
-            </div>
-          </section>
+            {selected.calculationReasons?.length > 0 && <section className="rounded-xl border border-slate-100 p-4"><h3 className="text-sm font-black text-slate-950">Calculation explanation</h3><div className="mt-3 space-y-3">{selected.calculationReasons.map((reason,index) => <div key={reason.code || index} className="border-l-2 border-emerald-200 pl-3"><p className="text-xs font-bold text-slate-950">{reason.label || reason.code}</p><p className="mt-1 text-xs leading-5 text-slate-600">{reason.detail || reason.formula || "No additional detail supplied."}</p></div>)}</div></section>}
+
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-950"><Info size={16} className="mt-0.5 shrink-0" /><p>Subsidy values are calculated only from the configured rule snapshot. A verified rule does not establish individual government eligibility. There is no homeowner acceptance or change-request endpoint yet; this page is read-only.</p></div>
+          </section>}
         </div>
-
-        <aside className="space-y-4">
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative h-28 bg-slate-100"><img src={rooftopImage} alt="Rooftop solar panels on a home" className="h-full w-full object-cover" /><div className="absolute inset-0 bg-gradient-to-r from-[#08243f]/70 to-transparent" /><p className="absolute bottom-3 left-4 text-lg font-black text-white">Quotation Summary</p></div>
-            <div className="space-y-3 p-4 sm:p-5">
-              <div className="flex justify-between gap-3 text-xs"><span className="text-slate-500">System Size</span><strong>{selected.systemSizeKw} kW</strong></div>
-              <div className="flex justify-between gap-3 text-xs"><span className="text-slate-500">Total Cost (Before Subsidy)</span><strong>Awaiting rates</strong></div>
-              <div className="flex justify-between gap-3 text-xs"><span className="text-slate-500">Government Subsidy*</span><strong className="text-emerald-800">{formatCurrency(selected.subsidyAmount)}</strong></div>
-              <div className="flex justify-between gap-3 rounded-lg bg-amber-100 px-3 py-3 text-sm font-black"><span>Net Payable Amount</span><span>Awaiting input</span></div>
-              <div className="border-t border-slate-100 pt-3"><h3 className="text-sm font-black text-slate-950">Next Steps</h3><ol className="mt-3 space-y-3 text-xs"><li className="flex items-center gap-2"><CheckCircle2 size={18} className="text-emerald-700" /><span><strong>Quotation prepared</strong><span className="block text-[10px] text-slate-500">{selected.createdAt}</span></span></li><li className="flex items-center gap-2"><span className="flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-700">●</span><span><strong>Review & Decide</strong><span className="block text-[10px] text-slate-500">Awaiting homeowner review</span></span></li><li className="flex items-center gap-2 text-slate-500"><span className="h-[18px] w-[18px] rounded-full border-2 border-slate-300" /><span>Schedule Installation</span></li><li className="flex items-center gap-2 text-slate-500"><span className="h-[18px] w-[18px] rounded-full border-2 border-slate-300" /><span>System Installation & Commissioning</span></li></ol></div>
-              <button type="button" onClick={() => { updateQuoteDecision(selected.id, "Accepted in demo session"); setNotice({ tone: "success", message: "Your acceptance was recorded in this page session only. No contract, payment or installation was created." }); }} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-extrabold text-white hover:bg-emerald-800"><CheckCircle2 size={17} /> Accept Quotation (Demo)</button>
-              <button type="button" onClick={() => setRequestingChanges((value) => !value)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-bold text-slate-800 hover:bg-slate-50"><MessageSquareText size={17} /> Request Changes</button>
-            </div>
-          </section>
-          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="flex items-center gap-2 text-sm font-black text-slate-950"><CircleHelp size={18} className="text-emerald-700" /> Quote Record</h3>
-            <p className="mt-2 text-xs text-slate-600">Quotation ID: <strong className="text-slate-900">{selected.id}</strong></p><p className="mt-1 text-xs text-slate-600">Project ID: <strong className="text-slate-900">{selected.projectId}</strong></p><p className="mt-1 text-xs text-slate-600">Created: <strong className="text-slate-900">{selected.createdAt}</strong></p>
-          </section>
-        </aside>
-      </section>
-
-      {requestingChanges && <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><label className="block text-xs font-extrabold text-slate-800">What would you like the team to review?</label><textarea value={changeMessage} onChange={(event) => setChangeMessage(event.target.value)} maxLength={500} rows={3} placeholder="Enter your request (10–500 characters)" className="mt-2 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none focus:border-emerald-600" /><div className="mt-2 flex flex-wrap items-center justify-between gap-2"><span className="text-[10px] text-slate-500">{changeMessage.length}/500 · session-only</span><button type="button" disabled={changeMessage.trim().length < 10} onClick={() => { updateQuoteDecision(selected.id, "Changes requested in demo session"); setChangeMessage(""); setRequestingChanges(false); setNotice({ tone: "success", message: "Your sample change request was kept in this page session only; it was not sent to the sales team." }); }} className="rounded-lg bg-amber-400 px-4 py-2.5 text-xs font-extrabold text-slate-950 disabled:opacity-40">Submit Request (Demo)</button></div></section>}
-
-      <p className="text-[10px] leading-5 text-slate-500">*Annual generation uses the fixed 1,400 units per kW per year assumption. Pricing is not calculated until approved rates are integrated. Subsidy is based on the unverified client-brief demo rule. Payment options and PDF generation are not connected.</p>
+      )}
     </div>
   );
 }

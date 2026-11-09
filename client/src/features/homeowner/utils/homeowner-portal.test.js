@@ -78,9 +78,10 @@ describe("Homeowner portal utilities", () => {
   it("rejects empty files", () => {
     expect(validateUploadFile(mockFile("empty.pdf", 0))).toContain("empty");
   });
-  it("accepts JPG, PNG and PDF bill extensions", () => {
-    expect(validateUploadFile(mockFile("bill.jpg"), { maxSizeMB: 10, allowedExtensions: ["pdf", "jpg", "jpeg", "png"] })).toBeNull();
-    expect(validateUploadFile(mockFile("bill.png"), { maxSizeMB: 10, allowedExtensions: ["pdf", "jpg", "jpeg", "png"] })).toBeNull();
+  it("accepts JPG, PNG, PDF and WebP bill extensions", () => {
+    expect(validateUploadFile(mockFile("bill.jpg"), { maxSizeMB: 10, allowedExtensions: ["pdf", "jpg", "jpeg", "png", "webp"] })).toBeNull();
+    expect(validateUploadFile(mockFile("bill.png"), { maxSizeMB: 10, allowedExtensions: ["pdf", "jpg", "jpeg", "png", "webp"] })).toBeNull();
+    expect(validateUploadFile(mockFile("bill.webp"), { maxSizeMB: 10, allowedExtensions: ["pdf", "jpg", "jpeg", "png", "webp"] })).toBeNull();
   });
   it("validates profile data", () => {
     expect(validateProfile({ fullName: "Aarav", email: "a@example.com", mobileNumber: "9876543210" })).toEqual({});

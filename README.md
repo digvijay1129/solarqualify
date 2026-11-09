@@ -65,10 +65,10 @@ The application follows a modular monolithic architecture.
 2. Homeowner submits a solar enquiry.
 3. Homeowner uploads an electricity bill.
 4. OCR extracts relevant information.
-5. Sales staff verifies extracted values.
+5. Sales Staff verifies extracted values.
 6. The system calculates lead priority and recommended solar capacity.
-7. Sales staff generates a quotation.
-8. Customer and staff track project progress.
+7. Sales Staff generates a quotation.
+8. Customer and staff track installation progress.
 
 ## Project Development Approach
 
@@ -87,10 +87,9 @@ Development is organized into phases:
 
 - The application is developed using JavaScript only.
 - No TypeScript is used.
-- Static data is used during initial frontend development.
-- Static feature repositories are being replaced with backend API repositories during integration.
+- Static feature repositories are progressively replaced with backend API repositories during integration.
 - OCR results require human verification.
-- Solar calculations use fixed formulas, not AI-generated calculations.
+- Solar calculations use fixed formulas and versioned configuration rules, not AI-generated calculations.
 - Subsidy and pricing rules are configurable and versioned.
 - Sample data is synthetic and must not contain real customer information.
 
@@ -104,15 +103,16 @@ Backend development through Phase 4.14 is implemented in the repository:
 - Project lifecycle, public status links, simulated notifications and audit logs.
 - Role-scoped MongoDB dashboard analytics and reporting APIs.
 
-**Phase 4.15.1 and 4.15.2 are implemented:** shared frontend API infrastructure, normalized API errors, Bearer-token storage/session restoration, homeowner registration, email/password login, logout, current-user verification, and role-protected homeowner/Sales Staff routes.
+**Phase 4.15.1–4.15.4 are implemented:** shared API infrastructure and authentication; protected homeowner and Sales Staff routes; live homeowner dashboard, solar enquiry submission, private bill upload/OCR, quotation history/PDF download and project tracking; plus Sales Staff lead listing, server-side search/filters/pagination, lead details, self-assignment and explainable scoring.
 
-The remaining dashboard, leads, bill-analysis, pricing, quotation, project and notification repositories still use illustrative mock data. Feature-level API integration, end-to-end verification, production deployment and final release activities remain in the development roadmap.
+The remaining Sales Staff dashboard, Bill Analysis, Pricing & Subsidy, Quotation Builder and Project Tracker feature repositories still need their full UI/API migration. Some homeowner profile, support and preference interactions also remain session-only. See the Phase 4.15 documentation for exact endpoint mapping and limitations.
 
-See [Phase 4.15 API and Authentication Integration](docs/phase-4.15-api-authentication/README.md) and the other phase documentation in `docs/` for API contracts, assumptions and limitations.
+- [Phase 4.15.1–4.15.2 API and Authentication](docs/phase-4.15-api-authentication/README.md)
+- [Phase 4.15.3–4.15.4 Homeowner and Lead Management](docs/phase-4.15.3-4.15.4-homeowner-leads/README.md)
 
 ## Assumptions and Limitations
 
-All implementation assumptions, calculation rules and known limitations will be documented in `docs/assumptions.md`.
+All implementation assumptions, calculation rules and known limitations are documented in `docs/assumptions.md` and the phase documents.
 
 ## License
 
