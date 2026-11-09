@@ -9,7 +9,7 @@ The backend manages three existing Mongoose collections:
 
 ## Versioning and history
 
-A new version is created under a rule name. The server assigns the next integer version, and assigns `createdBy` from the authenticated Sales Staff account. Clients cannot set either field. New versions default to `draft`. A version's commercial values, rule name and version number are not editable after creation. Historical versions are never deleted by these APIs.
+A new version is created under a rule name (matched case-insensitively). The server assigns the next integer version, and assigns `createdBy` from the authenticated Sales Staff account. Clients cannot set either field. New versions default to `draft`. A version's commercial values, rule name and version number are not editable after creation. Historical versions are never deleted by these APIs.
 
 A version can be made active or inactive. An active version can also receive an `effectiveTo` date to close its applicable period without removing the version from history. Effective date periods are inclusive; an end date must be later than the start date.
 

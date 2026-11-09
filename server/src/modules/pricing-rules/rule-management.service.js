@@ -159,6 +159,175 @@ function validateObjectPayload(payload, allowedKeys, message) {
   }
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\function normalizeRuleName(value) {');
+}
+
+function getRuleNamePattern(ruleName) {
+  return new RegExp(`^${escapeRegex(ruleName)}import mongoose from 'mongoose';
+import { randomUUID } from 'node:crypto';
+
+import PricingRule from '../pricing/pricing-rule.model.js';
+import SubsidyRule from '../subsidies/subsidy-rule.model.js';
+import GenerationRule from '../generation/generation-rule.model.js';
+import RuleManagementLock from './rule-management-lock.model.js';
+import { AppError } from '../../shared/errors/AppError.js';
+
+const RULE_MODELS = Object.freeze({
+  pricing: PricingRule,
+  subsidies: SubsidyRule,
+  generation: GenerationRule,
+});
+
+const RULE_STATUSES = new Set(['draft', 'active', 'inactive']);
+const MAX_LIST_LIMIT = 100;
+const MAX_SUBSIDY_SLABS = 20;
+const MAX_DATE = new Date('9999-12-31T23:59:59.999Z');
+
+const RULE_LOCK_LEASE_MS = 30_000;
+const RULE_LOCK_ATTEMPTS = 40;
+const RULE_LOCK_RETRY_MS = 50;
+
+function isDuplicateKeyError(error) {
+  return error?.code === 11000 || error?.code === 11001;
+}
+
+/**
+ * Serializes version creation and active-period checks for one named rule.
+ * The lease expires automatically if the process stops before it can release.
+ */
+async function withRuleLock(ruleType, ruleName, operation) {
+  const lockId = `${ruleType}:${ruleName.trim().toLocaleLowerCase('en-US')}`;
+  const ownerToken = randomUUID();
+  let acquired = false;
+
+  for (let attempt = 0; attempt < RULE_LOCK_ATTEMPTS; attempt += 1) {
+    const now = new Date();
+
+    try {
+      const lock = await RuleManagementLock.findOneAndUpdate(
+        {
+          _id: lockId,
+          $or: [
+            { lockedUntil: null },
+            { lockedUntil: { $lte: now } },
+          ],
+        },
+        {
+          $set: {
+            ruleType,
+            ruleName,
+            ownerToken,
+            lockedUntil: new Date(now.getTime() + RULE_LOCK_LEASE_MS),
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+          setDefaultsOnInsert: true,
+        }
+      ).lean();
+
+      if (lock) {
+        acquired = true;
+        break;
+      }
+    } catch (error) {
+      // An upsert against an already-held lock hits its unique _id.
+      if (!isDuplicateKeyError(error)) {
+        throw error;
+      }
+    }
+
+    if (attempt < RULE_LOCK_ATTEMPTS - 1) {
+      await new Promise((resolve) => setTimeout(resolve, RULE_LOCK_RETRY_MS));
+    }
+  }
+
+  if (!acquired) {
+    throw new AppError(
+      'Another request is updating this rule. Retry after a short delay.',
+      409
+    );
+  }
+
+  try {
+    return await operation();
+  } finally {
+    // If releasing fails, the bounded lease prevents a permanent deadlock.
+    try {
+      await RuleManagementLock.updateOne(
+        { _id: lockId, ownerToken },
+        {
+          $set: {
+            ownerToken: null,
+            lockedUntil: null,
+          },
+        }
+      );
+    } catch {
+      // The lock lease is the recovery mechanism for this cleanup failure.
+    }
+  }
+}
+
+
+function getRuleModel(ruleType) {
+  const model = RULE_MODELS[ruleType];
+
+  if (!model) {
+    throw new AppError(
+      'Rule type must be pricing, subsidies or generation.',
+      400
+    );
+  }
+
+  return model;
+}
+
+function requireRuleAccess(user, { write = false } = {}) {
+  const allowedRoles = write
+    ? ['salesStaff']
+    : ['homeowner', 'salesStaff'];
+
+  if (
+    !user ||
+    !mongoose.isValidObjectId(user.id) ||
+    !allowedRoles.includes(user.role)
+  ) {
+    throw new AppError(
+      write
+        ? 'Only Sales Staff can manage business rules.'
+        : 'You are not authorized to access business rules.',
+      403
+    );
+  }
+}
+
+function validateObjectPayload(payload, allowedKeys, message) {
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    Array.isArray(payload)
+  ) {
+    throw new AppError(message, 400);
+  }
+
+  const unsupported = Object.keys(payload).filter(
+    (key) => !allowedKeys.includes(key)
+  );
+
+  if (unsupported.length > 0) {
+    throw new AppError(
+      'The request contains unsupported properties.',
+      400
+    );
+  }
+}
+
+, 'i');
+}
+
 function normalizeRuleName(value) {
   if (typeof value !== 'string') {
     throw new AppError('Rule name is required.', 400);
@@ -375,7 +544,7 @@ async function findOverlappingActiveRule(
   excludeId = null
 ) {
   const query = {
-    ruleName,
+    ruleName: getRuleNamePattern(ruleName),
     status: 'active',
     effectiveFrom: {
       $lte: effectiveTo ?? MAX_DATE,
@@ -461,7 +630,7 @@ export async function createRuleVersion(user, ruleType, payload) {
     }
 
     const latestVersion = await model.findOne({
-      ruleName: data.ruleName,
+      ruleName: getRuleNamePattern(data.ruleName),
     })
       .sort({ version: -1 })
       .select('version')

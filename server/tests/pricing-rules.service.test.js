@@ -167,6 +167,49 @@ describe('Rule Management Service', () => {
     expect(result.id).toBe(RULE_ID);
   });
 
+  it('uses case-insensitive rule names when assigning versions', async () => {
+    modelMocks.pricing.findOne.mockReturnValue(query({ version: 5 }));
+    modelMocks.pricing.create.mockResolvedValue(createdRule({
+      ruleName: 'residential standard',
+      version: 6,
+    }));
+
+    const result = await createRuleVersion(staff, 'pricing', {
+      ruleName: 'residential standard',
+      pricePerKW: 65000,
+      effectiveFrom: '2026-12-01',
+    });
+
+    const versionLookup = modelMocks.pricing.findOne.mock.calls[0][0];
+    expect(versionLookup.ruleName).toBeInstanceOf(RegExp);
+    expect(versionLookup.ruleName.test('Residential Standard')).toBe(true);
+    expect(result.version).toBe(6);
+  });
+
+  it('checks active-period conflicts without case-sensitive rule-name gaps', async () => {
+    const conflict = createdRule({
+      ruleName: 'Residential Standard',
+      status: 'active',
+      effectiveFrom: new Date('2026-01-01'),
+      effectiveTo: null,
+    });
+    modelMocks.pricing.findOne.mockImplementation((filter) => (
+      filter.status === 'active' ? query(conflict) : query(null)
+    ));
+
+    await expect(createRuleVersion(staff, 'pricing', {
+      ruleName: 'residential standard',
+      pricePerKW: 70000,
+      effectiveFrom: '2026-06-01',
+      status: 'active',
+    })).rejects.toMatchObject({ statusCode: 409 });
+
+    const conflictQuery = modelMocks.pricing.findOne.mock.calls[0][0];
+    expect(conflictQuery.ruleName).toBeInstanceOf(RegExp);
+    expect(conflictQuery.ruleName.test('Residential Standard')).toBe(true);
+    expect(modelMocks.pricing.create).not.toHaveBeenCalled();
+  });
+
   it('creates subsidy rules as unverified and does not trust client-supplied verification fields', async () => {
     const saved = createdRule({
       verificationStatus: 'unverified',
