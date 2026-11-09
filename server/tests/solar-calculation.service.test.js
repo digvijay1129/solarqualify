@@ -146,6 +146,8 @@ describe('Solar Calculation Service', () => {
     expect(result.annualConsumptionUnits).toBe(4080);
     expect(result.estimatedAnnualGeneration).toBe(4200);
     expect(result.consumptionCoveragePercent).toBe(100);
+    expect(result.equipmentCost).toBe(195000);
+    expect(result.installationCharges).toBe(10000);
     expect(result.totalInstallationCost).toBe(205000);
     expect(result.applicableSubsidy).toBe(78000);
     expect(result.netInstallationCost).toBe(127000);
@@ -170,6 +172,8 @@ describe('Solar Calculation Service', () => {
       systemCapacityKW: 3,
       annualConsumptionUnits: 4080,
       consumptionCoveragePercent: 100,
+      equipmentCost: 195000,
+      installationCharges: 10000,
       totalInstallationCost: 205000,
       applicableSubsidy: 78000,
       netInstallationCost: 127000,

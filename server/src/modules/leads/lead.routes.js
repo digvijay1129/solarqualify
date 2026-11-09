@@ -27,6 +27,11 @@ import {
 } from '../solar-calculations/solar-calculation.controller.js';
 
 import {
+  createQuotationController,
+  getLeadQuotationsController,
+} from '../quotations/quotation.controller.js';
+
+import {
   uploadBillDocumentController,
   getBillDocumentMetadataController,
   downloadBillDocumentController,
@@ -104,6 +109,20 @@ router.get(
   '/:leadId/solar-calculations/:calculationId',
   authorize('homeowner', 'salesStaff'),
   getSolarCalculationController
+);
+
+// Formal quotations can only be generated after a lead is qualified.
+router.post(
+  '/:leadId/quotations',
+  leadWriteLimiter,
+  authorize('salesStaff'),
+  createQuotationController
+);
+
+router.get(
+  '/:leadId/quotations',
+  authorize('homeowner', 'salesStaff'),
+  getLeadQuotationsController
 );
 
 // Overview must be declared before the dynamic lead ID route.

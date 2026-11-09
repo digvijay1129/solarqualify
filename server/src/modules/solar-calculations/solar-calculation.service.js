@@ -328,6 +328,8 @@ function toCalculationDTO(quotation) {
     estimatedAnnualGeneration: value.estimatedAnnualGeneration,
     annualConsumptionUnits: value.annualConsumptionUnits ?? null,
     consumptionCoveragePercent: value.consumptionCoveragePercent ?? null,
+    equipmentCost: value.equipmentCost ?? null,
+    installationCharges: value.installationCharges ?? null,
     totalInstallationCost: value.totalInstallationCost,
     applicableSubsidy: value.applicableSubsidy,
     netInstallationCost: value.netInstallationCost,
@@ -438,10 +440,9 @@ export async function createSolarCalculation(user, leadId, payload = {}) {
     2
   );
 
-  const equipmentAndInstallationCost =
-    systemCapacityKW * pricingRule.pricePerKW +
-    pricingRule.installationCharges;
-  const totalInstallationCost = roundMoney(equipmentAndInstallationCost);
+  const equipmentCost = roundMoney(systemCapacityKW * pricingRule.pricePerKW);
+  const installationCharges = roundMoney(pricingRule.installationCharges);
+  const totalInstallationCost = roundMoney(equipmentCost + installationCharges);
   const subsidy = calculateSubsidy(
     systemCapacityKW,
     subsidyRule,
@@ -613,6 +614,8 @@ export async function createSolarCalculation(user, leadId, payload = {}) {
     estimatedAnnualGeneration,
     annualConsumptionUnits,
     consumptionCoveragePercent,
+    equipmentCost,
+    installationCharges,
     totalInstallationCost,
     applicableSubsidy,
     netInstallationCost,

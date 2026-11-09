@@ -90,6 +90,30 @@ describe('Quotation Model', () => {
     expect(quotation.generationSnapshot.effectiveFrom).toEqual(effectiveFrom);
   });
 
+  it('validates customer snapshot and separate equipment and installation costs', async () => {
+    const data = validQuotation();
+    data.equipmentCost = 195000;
+    data.installationCharges = 15000;
+    data.quotationNumber = 'SQ-439016';
+    data.customerSnapshot = {
+      referenceId: 'L-TEST1001',
+      customerName: 'Test Customer',
+      email: 'test@example.com',
+      phone: '9876543210',
+      propertyAddress: 'Pune, Maharashtra',
+      propertyType: 'residential',
+    };
+    data.quotationStatus = 'generated';
+    data.generatedAt = new Date('2026-11-09T00:00:00.000Z');
+
+    const quotation = new Quotation(data);
+    await expect(quotation.validate()).resolves.toBeUndefined();
+    expect(quotation.customerSnapshot.customerName).toBe('Test Customer');
+    expect(quotation.equipmentCost).toBe(195000);
+    expect(quotation.installationCharges).toBe(15000);
+    expect(quotation.quotationNumber).toBe('SQ-439016');
+  });
+
   it('should reject a quotation without a lead ID', async () => {
     const data = validQuotation();
     delete data.leadId;
