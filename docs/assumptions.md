@@ -28,7 +28,7 @@ The following information comes directly from Problem Statement 4.
 
 ### A-01: Single Business
 
-The initial application supports one rooftop solar installation business.
+The initial application supports one rooftop solar installation business. A development-only seed command creates synthetic accounts, the three brief sample leads and clearly labelled demo pricing/generation/subsidy rules. It refuses to run when NODE_ENV=production.
 
 ### A-02: User Roles
 
@@ -83,9 +83,7 @@ OCR confidence will be derived from available OCR and field-validation signals. 
 
 ### A-08: Bill Upload Formats
 
-The initial implementation will support common bill image formats such as JPG, PNG and WEBP.
-
-PDF support will be added only if it can be implemented and tested reliably within the project scope.
+The implemented upload pipeline supports PDF, JPEG, PNG and WebP. The server validates file signatures and limits uploads by the configured MAX_UPLOAD_MB setting (5 MB by default). Image OCR uses Tesseract.js; PDF processing uses the dedicated PDF text/OCR pipeline.
 
 ### A-09: Generation Calculation
 
@@ -95,9 +93,7 @@ Actual generation may differ from the estimate.
 
 ### A-10: Solar Capacity Recommendation
 
-Initial recommended system capacity will be calculated using annual electricity consumption divided by the configured annual generation per kW.
-
-Roof suitability and sanctioned load must also be considered.
+Recommended capacity is based on annual consumption divided by the configured annual generation per kW, rounded up to a 0.5 kW increment. A manually verified sanctioned load expressed in kW can cap the result. kVA and HP are not converted. Customer-provided roof type, area and pincode are stored and included in the calculation audit snapshot, but are not converted into a capacity cap because the brief supplies no engineering area-to-capacity standard. A technical survey must validate usable roof area, shading, orientation and structural suitability.
 
 The mathematical recommendation is not an engineering installation approval.
 
@@ -121,21 +117,15 @@ No actual customer electricity bills, consumer numbers, addresses or credentials
 
 ### A-14: Language
 
-English will be the initial interface language.
-
-Marathi and Hindi will be prepared as language targets and implemented where feasible within the submission scope.
+The current UI is English-only. Marathi and Hindi were specified as target languages but are not implemented in this take-home build; translation catalogues, language selection and translated accessibility/error copy remain future work.
 
 ### A-15: File Storage
 
-Development may use local temporary file storage.
-
-Production customer documents will use private object storage with authorized access.
+Uploaded electricity bills are encrypted with AES-256-GCM before private ImageKit storage. The backend authorizes document access and streams the document through protected routes. The encryption key must be generated per environment, stored only in backend secrets, backed up securely and rotated if exposed.
 
 ### A-16: Deployment
 
-Vercel, Render, MongoDB Atlas and private AWS S3 storage are planned deployment choices.
-
-Final availability and configuration will be confirmed during deployment.
+Vercel (frontend), Render (API), MongoDB Atlas (database) and ImageKit private storage are the documented deployment targets. No production deployment URL has been verified for this submission.
 
 ## 3. Calculation Assumptions
 
