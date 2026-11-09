@@ -62,13 +62,17 @@ The application follows a modular monolithic architecture.
 ## Core Workflow
 
 1. Homeowner registers or signs in.
-2. Homeowner submits a solar enquiry.
-3. Homeowner uploads an electricity bill.
-4. OCR extracts relevant information.
-5. Sales Staff verifies extracted values.
-6. The system calculates lead priority and recommended solar capacity.
-7. Sales Staff generates a quotation.
-8. Customer and staff track installation progress.
+2. Homeowner submits ownership, roof type/area, PIN code, monthly bill and monthly units.
+3. Homeowner uploads an electricity bill (PDF/JPEG/PNG/WebP).
+4. OCR extracts consumer number, tariff, sanctioned load and monthly units.
+5. Sales Staff reviews and confirms extracted values; OCR output stays unverified until review.
+6. The system stores an explainable lead score and a consumption-based capacity recommendation.
+7. Sales Staff generates a formal quotation PDF from dated pricing, generation and verified subsidy rules.
+8. Staff updates project milestones and can issue a time-limited public customer status link.
+
+## Local demo data
+
+After configuring `server/.env` and starting MongoDB, run `npm run seed:demo`. The command creates synthetic accounts, the three sample leads from the brief, and clearly marked demo pricing/generation/subsidy rules. Local-only demo credentials and exact steps are in [deployment.md](deployment.md). The seed command refuses to run with `NODE_ENV=production`.
 
 ## Project Development Approach
 
@@ -95,7 +99,9 @@ Development is organized into phases:
 
 ## Project Status
 
-Backend development through Phase 4.14 is implemented in the repository:
+The take-home core is implemented as a role-based React/Express/MongoDB application. This submission adds persisted homeowner roof/PIN inputs, sample-aligned score thresholds (scoring version 1.1.0), calculation audit details for roof constraints, a local-only synthetic demo seeder, and a safe blank document-encryption-key template.
+
+Backend capabilities in the repository include:
 
 - Secure electricity bill upload, OCR and manual verification.
 - Explainable lead qualification and versioned business rules.
@@ -113,9 +119,11 @@ The Sales Staff Dashboard reads live lead, priority, quotation and project analy
 - Phase 4.15.7–4.15.8 Quotations and Projects: docs/phase-4.15.7-4.15.8-quotations-projects/README.md
 - Phase 4.15.9–4.15.10 Dashboard Analytics and Mock Removal: docs/phase-4.15.9-4.15.10-dashboard-mock-cleanup/README.md
 
-## Assumptions and Limitations
+## Submission and known gaps
 
-All implementation assumptions, calculation rules and known limitations are documented in docs/assumptions.md and the phase documents.
+The Technical Design Document and deployment guide are included in the take-home submission ZIP. No production URL has been verified. The backend does not yet expose homeowner quotation acceptance, project document upload, or direct payment/WhatsApp/SMS delivery. Project stage names are a simplified internal workflow and do not yet model every requested financial/subsidy event. Marathi and Hindi are not yet implemented. The subsidy rule seeded from the brief is unverified and must not be presented as official eligibility or a production entitlement.
+
+All assumptions, calculation rules and limitations are documented in [docs/assumptions.md](docs/assumptions.md) and the phase integration notes.
 
 ## License
 
