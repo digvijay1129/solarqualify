@@ -6,9 +6,11 @@ import { AppError } from '../../shared/errors/AppError.js';
 
 export const LEAD_SCORING_VERSION = '1.0.0';
 
+// Calibrated to the three client-provided sample leads: 3.2k bill / 340 units
+// is High, while tenant and low-consumption examples remain Low.
 const PRIORITY_THRESHOLDS = Object.freeze({
-  high: 70,
-  medium: 40,
+  high: 65,
+  medium: 55,
 });
 
 const SCORE_WEIGHTS = Object.freeze({
