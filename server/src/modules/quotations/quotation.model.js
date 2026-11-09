@@ -30,6 +30,16 @@ const pricingSnapshotSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+
+    effectiveFrom: {
+      type: Date,
+      default: null,
+    },
+
+    effectiveTo: {
+      type: Date,
+      default: null,
+    },
   },
   { _id: false }
 );
@@ -74,6 +84,16 @@ const subsidySnapshotSchema = new mongoose.Schema(
       enum: ['unverified', 'verified', 'rejected'],
       required: true,
     },
+
+    effectiveFrom: {
+      type: Date,
+      default: null,
+    },
+
+    effectiveTo: {
+      type: Date,
+      default: null,
+    },
   },
   { _id: false }
 );
@@ -101,6 +121,16 @@ const generationSnapshotSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0.1,
+    },
+
+    effectiveFrom: {
+      type: Date,
+      default: null,
+    },
+
+    effectiveTo: {
+      type: Date,
+      default: null,
     },
   },
   { _id: false }

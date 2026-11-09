@@ -179,6 +179,47 @@ describe('Solar Calculation Service', () => {
     }));
   });
 
+  it('queries bill data only from the linked active, OCR-completed, manually verified document', async () => {
+    await createSolarCalculation(staff, LEAD_ID, {
+      effectiveOn: '2026-11-09',
+    });
+
+    expect(BillAnalysis.findOne).toHaveBeenCalledWith({
+      _id: BILL_ID,
+      leadId: LEAD_ID,
+      deletionStatus: 'active',
+      ocrStatus: 'completed',
+      verificationStatus: 'verified',
+    });
+    expect(BillAnalysis.findOne.mock.results[0].value.select).toHaveBeenCalledWith(
+      'monthlyUnits sanctionedLoad sanctionedLoadUnit verificationStatus ocrStatus'
+    );
+  });
+
+  it('selects an explicitly requested subsidy rule by ID and verifies its active period', async () => {
+    SubsidyRule.findOne.mockReturnValue(chain(subsidyRule()));
+
+    const result = await createSolarCalculation(staff, LEAD_ID, {
+      effectiveOn: '2026-11-09',
+      subsidyRuleId: SUBSIDY_ID,
+    });
+
+    expect(SubsidyRule.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      _id: SUBSIDY_ID,
+      status: 'active',
+      verificationStatus: 'verified',
+    }));
+    expect(result.subsidySnapshot.version).toBe(3);
+  });
+
+  it('rejects an invalid effective date', async () => {
+    await expect(createSolarCalculation(staff, LEAD_ID, {
+      effectiveOn: '2026-02-30',
+    })).rejects.toMatchObject({ statusCode: 400 });
+
+    expect(PricingRule.find).not.toHaveBeenCalled();
+  });
+
   it('uses verified bill consumption and clamps recommendation to verified kW sanctioned load', async () => {
     mockCommon({
       bill: {
@@ -232,6 +273,23 @@ describe('Solar Calculation Service', () => {
 
     expect(result.calculationInputs.monthlyConsumptionSource).toBe('lead_form');
     expect(result.annualConsumptionUnits).toBe(3000);
+  });
+
+  it('stores effective dates with each immutable business-rule snapshot', async () => {
+    const result = await createSolarCalculation(staff, LEAD_ID, {
+      effectiveOn: '2026-11-09',
+    });
+
+    expect(result.pricingSnapshot.effectiveFrom).toEqual(
+      new Date('2026-01-01T00:00:00.000Z')
+    );
+    expect(result.pricingSnapshot.effectiveTo).toBeNull();
+    expect(result.subsidySnapshot.effectiveFrom).toEqual(
+      new Date('2026-01-01T00:00:00.000Z')
+    );
+    expect(result.generationSnapshot.effectiveFrom).toEqual(
+      new Date('2026-01-01T00:00:00.000Z')
+    );
   });
 
   it('does not apply unverified subsidy rules', async () => {

@@ -102,17 +102,6 @@ function toId(value) {
   return value?.toString?.() ?? value;
 }
 
-function isEffectiveOn(rule, effectiveOn) {
-  const from = new Date(rule.effectiveFrom);
-  const to = rule.effectiveTo ? new Date(rule.effectiveTo) : null;
-
-  return (
-    rule.status === 'active' &&
-    from.getTime() <= effectiveOn.getTime() &&
-    (!to || to.getTime() >= effectiveOn.getTime())
-  );
-}
-
 function activeRuleQuery(effectiveOn, extra = {}) {
   return {
     ...extra,
@@ -291,8 +280,11 @@ function buildPricingSnapshot(rule) {
     ruleId: rule._id,
     ruleName: rule.ruleName,
     version: rule.version,
+    version: rule.version,
     pricePerKW: rule.pricePerKW,
     installationCharges: rule.installationCharges,
+    effectiveFrom: rule.effectiveFrom,
+    effectiveTo: rule.effectiveTo ?? null,
   };
 }
 
@@ -309,6 +301,8 @@ function buildSubsidySnapshot(rule) {
     })),
     maximumSubsidy: rule.maximumSubsidy,
     verificationStatus: rule.verificationStatus,
+    effectiveFrom: rule.effectiveFrom,
+    effectiveTo: rule.effectiveTo ?? null,
   };
 }
 
@@ -318,6 +312,8 @@ function buildGenerationSnapshot(rule) {
     ruleName: rule.ruleName,
     version: rule.version,
     unitsPerKWPerYear: rule.unitsPerKWPerYear,
+    effectiveFrom: rule.effectiveFrom,
+    effectiveTo: rule.effectiveTo ?? null,
   };
 }
 
