@@ -121,7 +121,7 @@ The Sales Staff Dashboard reads live lead, priority, quotation and project analy
 
 ## Submission and known gaps
 
-The Technical Design Document and deployment guide are included in the take-home submission ZIP. No production URL has been verified. The backend does not yet expose homeowner quotation acceptance, project document upload, or direct payment/WhatsApp/SMS delivery. Project stage names are a simplified internal workflow and do not yet model every requested financial/subsidy event. Marathi and Hindi are not yet implemented. The subsidy rule seeded from the brief is unverified and must not be presented as official eligibility or a production entitlement.
+The Technical Design Document and deployment guide are included in the take-home submission ZIP. No production URL has been verified. Homeowner quotation acceptance/rejection is implemented. Project document upload and direct payment/WhatsApp/SMS delivery remain outside the current API. Server project stages are a simplified internal workflow and do not yet model every requested financial/subsidy event. Marathi and Hindi are not yet implemented. The subsidy rule seeded from the brief is unverified and must not be presented as official eligibility or a production entitlement.
 
 All assumptions, calculation rules and limitations are documented in [docs/assumptions.md](docs/assumptions.md) and the phase integration notes.
 
