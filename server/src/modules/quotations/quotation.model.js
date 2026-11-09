@@ -153,8 +153,33 @@ const quotationSchema = new mongoose.Schema(
 
     estimatedAnnualSavings: {
       type: Number,
-      required: true,
       min: 0,
+      default: null,
+    },
+
+    annualConsumptionUnits: {
+      type: Number,
+      min: 0,
+      default: null,
+    },
+
+    consumptionCoveragePercent: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+
+    calculationVersion: {
+      type: String,
+      trim: true,
+      maxlength: 20,
+      default: '1.0.0',
+    },
+
+    calculationReasons: {
+      type: [mongoose.Schema.Types.Mixed],
+      default: [],
     },
 
     estimatedPaybackYears: {

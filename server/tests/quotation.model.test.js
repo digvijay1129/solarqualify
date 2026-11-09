@@ -53,6 +53,24 @@ describe('Quotation Model', () => {
     expect(quotation.systemCapacityKW).toBe(3);
   });
 
+  it('allows savings to remain unavailable when the monthly bill is missing', async () => {
+    const data = validQuotation();
+    data.estimatedAnnualSavings = null;
+    data.estimatedPaybackYears = null;
+    data.annualConsumptionUnits = 4080;
+    data.consumptionCoveragePercent = 100;
+    data.calculationVersion = '1.0.0';
+    data.calculationReasons = [
+      { code: 'ANNUAL_SAVINGS_UNAVAILABLE', output: null },
+    ];
+
+    const quotation = new Quotation(data);
+
+    await expect(quotation.validate()).resolves.toBeUndefined();
+    expect(quotation.estimatedAnnualSavings).toBeNull();
+    expect(quotation.estimatedPaybackYears).toBeNull();
+  });
+
   it('should reject a quotation without a lead ID', async () => {
     const data = validQuotation();
     delete data.leadId;

@@ -21,6 +21,12 @@ import {
 } from '../lead-scoring/lead-scoring.controller.js';
 
 import {
+  createSolarCalculationController,
+  getSolarCalculationsController,
+  getSolarCalculationController,
+} from '../solar-calculations/solar-calculation.controller.js';
+
+import {
   uploadBillDocumentController,
   getBillDocumentMetadataController,
   downloadBillDocumentController,
@@ -43,6 +49,14 @@ const leadWriteLimiter = rateLimit({
 const billAnalysisLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Solar calculations create immutable draft quotation snapshots.
+const solarCalculationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -70,6 +84,26 @@ router.get(
   '/:leadId/qualification',
   authorize('homeowner', 'salesStaff'),
   getLeadQualificationController
+);
+
+// Deterministic solar calculations use the active configured rule versions.
+router.post(
+  '/:leadId/solar-calculations',
+  solarCalculationLimiter,
+  authorize('salesStaff'),
+  createSolarCalculationController
+);
+
+router.get(
+  '/:leadId/solar-calculations',
+  authorize('homeowner', 'salesStaff'),
+  getSolarCalculationsController
+);
+
+router.get(
+  '/:leadId/solar-calculations/:calculationId',
+  authorize('homeowner', 'salesStaff'),
+  getSolarCalculationController
 );
 
 // Overview must be declared before the dynamic lead ID route.
