@@ -114,11 +114,26 @@ The backend connects to MongoDB before accepting requests. If it fails to start,
 
 ## 5. Demo access and seed data
 
-The project source includes synthetic sample fixtures for design and automated tests. The production application does not fall back to those fixtures when API calls fail. There is no committed demo password, pre-seeded production user, or public reviewer account in this repository.
+Run the development-only seeder after MongoDB and the backend environment are configured:
 
-Create a homeowner account using the Register screen. A Sales Staff account must be provisioned securely in the review database by the project owner; public self-registration creates homeowner accounts only. Do not add a hard-coded reviewer password or real customer data to Git.
+```bash
+npm run seed:demo
+```
 
-For reviewer access, provision a dedicated synthetic Sales Staff account in the private deployment database and share its credentials through the submission platform's private channel (not this public repository). Create a separate synthetic homeowner account through registration. Do not reuse personal accounts or production credentials.
+The command refuses to run when `NODE_ENV=production`. It creates synthetic Sales Staff and Homeowner accounts, loads the three sample leads from the client brief (LD-30881, LD-30902 and LD-30915), calculates their explainable lead scores, and creates clearly labelled demo business rules. It is safe to re-run: it updates the same demo records rather than generating a new set each time.
+
+**Local reviewer accounts (development database only):**
+
+| Role | Email | Password |
+|---|---|---|
+| Sales Staff | `sales.demo@solarqualify.local` | `SolarQualifyDemo!2026` |
+| Homeowner | `homeowner.demo@solarqualify.local` | `SolarHomeownerDemo!2026` |
+
+These credentials are public, local-only demo credentials. Never use them in a deployed or production environment. You can override them before running the seeder with `DEMO_SALES_EMAIL`, `DEMO_SALES_PASSWORD`, `DEMO_HOMEOWNER_EMAIL` and `DEMO_HOMEOWNER_PASSWORD`. The demo Sales Staff account can view and work the seeded lead queue. The homeowner account is a clean account for testing a new enquiry.
+
+The high-priority sample lead is pre-marked as qualified to make the quotation path discoverable. The seeded equipment pricing is illustrative, not a Company A supplier price. The central subsidy rule is stored as unverified; verify it from an authoritative current source before activating it for actual customer offers. The seeder does not create an electricity bill document; upload a synthetic test bill from the homeowner workflow to exercise OCR. No seeded project is created because the current API has no homeowner quotation-acceptance endpoint.
+
+The production application does not fall back to fixtures when API calls fail. Public self-registration creates Homeowner accounts only; Sales Staff accounts must be provisioned securely for a real deployment. Do not reuse the local demo credentials in any deployment.
 
 ## 6. Tests and production build
 
