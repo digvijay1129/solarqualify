@@ -120,7 +120,7 @@ export async function fetchPricingSubsidyConfiguration() {
     activeVersion: activePricing ? `v${activePricing.version}` : "Not configured",
     rates: mapRates(activePricing),
     generation: {
-      unitsPerKWPerYear: activeGeneration?.unitsPerKWPerYear ?? null,
+      unitsPerKwPerYear: activeGeneration?.unitsPerKWPerYear ?? null,
       label: activeGeneration
         ? `${activeGeneration.unitsPerKWPerYear.toLocaleString("en-IN")} units per kW per year`
         : "No active generation rule",

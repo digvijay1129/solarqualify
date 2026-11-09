@@ -136,10 +136,38 @@ export function getRateDisplayState(rate) {
 
 export function getNextVersionLabel(versions = []) {
   const majorMinor = versions
-    .map((item) => /^v(\\d+)\\.(\\d+)$/.exec(item.version ?? ""))
+    .map((item) => /^v(\d+)\.(\d+)$/.exec(String(item.version ?? "")))
     .filter(Boolean)
     .map((match) => ({ major: Number(match[1]), minor: Number(match[2]) }))
     .sort((a, b) => b.major - a.major || b.minor - a.minor)[0];
   if (!majorMinor) return "v1.0";
   return `v${majorMinor.major}.${majorMinor.minor + 1}`;
+}
+
+export function validateNewVersion({ version, effectiveFrom, effectiveTo }, existingVersions = []) {
+  const errors = { ...validateEffectiveDates(effectiveFrom, effectiveTo) };
+  const normalizedVersion = String(version ?? "").trim();
+  if (!/^v\d+\.\d+$/.test(normalizedVersion)) {
+    errors.version = "Use a version label such as v2.1.";
+  } else if (existingVersions.some((item) => String(item.version) === normalizedVersion)) {
+    errors.version = "This version label already exists.";
+  }
+  return errors;
+}
+
+// Kept for the legacy draft editor/unit tests. Live rule creation is performed
+// through the server, which assigns its own immutable numeric version.
+export function createDraftVersion(input, existingVersions = []) {
+  const errors = validateNewVersion(input, existingVersions);
+  if (Object.keys(errors).length > 0) return { version: null, errors };
+  const version = {
+    id: `draft-${input.version.trim().replace(/[^a-zA-Z0-9.-]/g, "")}`,
+    version: input.version.trim(),
+    effectiveFrom: input.effectiveFrom,
+    effectiveTo: input.effectiveTo || null,
+    status: "draft",
+    note: String(input.note ?? "").trim(),
+    createdInSession: true,
+  };
+  return { version, errors: {} };
 }

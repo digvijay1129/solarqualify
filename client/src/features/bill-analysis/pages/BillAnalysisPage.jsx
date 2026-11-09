@@ -198,9 +198,9 @@ function BillAnalysisPage() {
     }
   }
 
-  async function handleDeleteRejectedBill() {
-    if (!selectedLeadId || busy || reviewQuery.data?.verificationStatus !== "rejected") return;
-    const accepted = typeof globalThis.confirm !== "function" || globalThis.confirm("Delete the rejected bill document? You can then upload a replacement bill.");
+  async function handleReplaceBill() {
+    if (!selectedLeadId || busy || reviewQuery.data?.verificationStatus === "verified") return;
+    const accepted = typeof globalThis.confirm !== "function" || globalThis.confirm("Delete this unverified or rejected bill and its review result? You can then upload a replacement document.");
     if (!accepted) return;
     setBusy("delete");
     setNotice(null);
@@ -209,14 +209,15 @@ function BillAnalysisPage() {
       setFieldValues(EMPTY_FIELDS);
       setReviewNotes("");
       setSelectedFile(null);
+      setDecision("verified");
       queryClient.setQueryData(["bill-analysis", "bill", selectedLeadId], null);
       queryClient.removeQueries({ queryKey: ["bill-analysis", "bill-file", selectedLeadId], exact: true });
       queryClient.removeQueries({ queryKey: ["bill-analysis", "review", selectedLeadId], exact: true });
       await queryClient.invalidateQueries({ queryKey: ["bill-analysis", "bill", selectedLeadId] });
       await billQuery.refetch();
-      setNotice({ tone: "success", message: "Rejected bill deleted. Upload a replacement document for a new OCR and review cycle." });
+      setNotice({ tone: "success", message: "Bill and its unverified review record were deleted. Upload a replacement document to start a new OCR review cycle." });
     } catch (error) {
-      setNotice({ tone: "error", message: error?.message || "Rejected bill could not be deleted." });
+      setNotice({ tone: "error", message: error?.message || "Bill could not be replaced." });
     } finally {
       setBusy("");
     }
@@ -386,7 +387,7 @@ function BillAnalysisPage() {
                   <p className="mt-1 text-xs text-slate-500">{billQuery.data.documentType} · {Math.round((billQuery.data.documentSize ?? 0) / 1024)} KB</p>
                   <p className="mt-2 text-xs text-slate-600">Verification status: <strong>{review?.verificationStatus ?? billQuery.data.verificationStatus}</strong></p>
                   {storedBillFile ? <div className="mt-4"><BillPreviewPanel file={storedBillFile} embedded /></div> : storedBillQuery.isFetching ? <p className="mt-3 text-xs text-slate-500">Loading private bill preview…</p> : storedBillQuery.error ? <ErrorBanner>Stored bill preview could not be loaded: {storedBillQuery.error.message}</ErrorBanner> : null}
-                  {review?.verificationStatus === "rejected" && <button type="button" onClick={handleDeleteRejectedBill} disabled={Boolean(busy)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-300 px-4 text-xs font-bold text-red-800 hover:bg-red-50 disabled:opacity-50">{busy === "delete" ? "Deleting…" : "Delete rejected bill & upload replacement"}</button>}
+                  {review?.verificationStatus !== "verified" && <button type="button" onClick={handleReplaceBill} disabled={Boolean(busy)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-300 px-4 text-xs font-bold text-red-800 hover:bg-red-50 disabled:opacity-50">{busy === "delete" ? "Replacing…" : "Replace bill & restart OCR"}</button>}
                   {ocrPending && <ErrorBanner tone="warning">OCR has not completed yet or is currently processing. Run or retry extraction below.</ErrorBanner>}
                   {ocrFailed && <ErrorBanner>{reviewQuery.error?.message || "OCR review data could not be retrieved."}</ErrorBanner>}
                   {ocrPending && <button type="button" onClick={handleRunOcr} disabled={Boolean(busy)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-xs font-extrabold text-white disabled:opacity-50"><RefreshCw size={14} className={busy === "ocr" ? "animate-spin" : ""} />{busy === "ocr" ? "Running OCR…" : "Run / Retry OCR"}</button>}
@@ -405,7 +406,7 @@ function BillAnalysisPage() {
                     editable={!verificationFinal}
                     onFieldChange={changeField}
                     validationErrors={validationErrors}
-                    onReupload={() => fileInputRef.current?.click()}
+                    onReupload={handleReplaceBill}
                     onSaveDraft={() => setNotice({ tone: "warning", message: "Draft corrections remain in this page session and are not saved to the server until you submit a verification decision." })}
                     onConfirmDetails={handleVerify}
                     confirmLabel={decision === "rejected" ? "Confirm Rejection" : "Verify Bill"}
