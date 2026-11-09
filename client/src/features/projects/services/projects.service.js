@@ -133,3 +133,12 @@ export async function getPublicCustomerProjectStatus(token) {
   }));
   return result ?? null;
 }
+
+
+export async function createProjectFromAcceptedQuotation(quotationId) {
+  if (!quotationId) throw new Error("A quotation ID is required.");
+  const result = unwrap(await apiRequest(`/quotations/${quotationId}/project`, {
+    method: "POST",
+  }));
+  return result?.project ? mapProjectRecord(result.project) : null;
+}
