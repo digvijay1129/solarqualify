@@ -160,7 +160,14 @@ function validateObjectPayload(payload, allowedKeys, message) {
 }
 
 function escapeRegex(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\function normalizeRuleName(value) {');
+  return value.replace(/[.*+?^\${}()|[\\]\\\\]/g, '\\\\$&');
+}
+
+function getRuleNamePattern(ruleName) {
+  return new RegExp(`^${escapeRegex(ruleName)}$`, 'i');
+}
+
+function normalizeRuleName(value) {');
 }
 
 function getRuleNamePattern(ruleName) {
